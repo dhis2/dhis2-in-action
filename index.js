@@ -26,7 +26,7 @@ $(function() {
       color: '#555',
       weight: 1,
       fillColor: '#eee',
-      fillOpacity: 1
+      fillOpacity: 0.8
     }).addTo(map);
     onDataLoad();
   });

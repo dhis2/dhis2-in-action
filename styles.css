@@ -37,6 +37,17 @@ html, body {
   border-top-right-radius: 0;
 }
 
+#map .leaflet-popup-content-wrapper {
+  border-radius: 0!important;
+}
+
+#map .leaflet-popup-content {
+  margin: 8px 20px 8px 12px!important;
+}
+
+#map .leaflet-popup-close-button {
+  font-weight: normal;
+}
 
 
 .highcharts-credits {
