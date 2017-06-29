@@ -98,7 +98,7 @@ $(function() {
             fillColor: colors[value]
           });
 
-          item.bindPopup('<strong>' + data[code].name + '</strong><br/>' + ((value === 's') ? 'National rollout' : 'Programs/partial'));
+          item.bindPopup('<strong>' + data[code].name + '</strong><br/>' + ((value === 's') ? 'National scale' : 'Programs/partial'));
         }
       });
     }
