@@ -85,11 +85,13 @@ $(function() {
 
       features.eachLayer(function(item) {
 
-        var code = item.feature.properties.ISO_A2;
+        var code = item.feature.properties.CODE;
 
+        /*
         if (code === 'IN') {
           code = 'IN-' + item.feature.properties.POSTAL;
         }
+        */
 
         if (code && data[code] && data[code][lastYear]) {
           var value = data[code][lastYear];
