@@ -113,14 +113,10 @@ function createChart() {
   var pilotByYear = [];
   var nationalByYear = [];
 
-  console.log('Chart data', chartData);
-
   years.forEach(function(year) {
     pilotByYear.push(chartData[year].p);
     nationalByYear.push(chartData[year].s);
   });
-
-  console.log(pilotByYear, nationalByYear);
 
   Highcharts.chart('chart', {
     chart: {
