@@ -52,10 +52,15 @@ $(function() {
     rows.forEach(function(row) {
       var id = row['gsx$code']['$t'];
       var name = row['gsx$name']['$t'];
-      var value =
+      var pilot = row['gsx$pilot']['$t'] || null;
+      var national = row['gsx$scale']['$t'] || null;
+
+      console.log(pilot, national);
 
       data[id] = {
-        name: name
+        name: name,
+        pilot: pilot,
+        national: national
       };
 
       years.forEach(function(year) {
@@ -87,20 +92,25 @@ $(function() {
 
         var code = item.feature.properties.CODE;
 
-        /*
-        if (code === 'IN') {
-          code = 'IN-' + item.feature.properties.POSTAL;
-        }
-        */
-
         if (code && data[code] && data[code][lastYear]) {
-          var value = data[code][lastYear];
+          var country = data[code];
+          var value = country[lastYear];
 
           item.setStyle({
             fillColor: colors[value]
           });
 
-          item.bindPopup('<strong>' + data[code].name + '</strong><br/>' + ((value === 's') ? 'National scale' : 'Programs/partial'));
+          var popup = '<h2>' + country.name + '</h2>';
+
+          if (country.pilot) {
+            popup += '<div>Pilot: ' + country.pilot + '</div>';
+          }
+
+          if (country.national) {
+            popup += '<div>National scale: ' + country.national + '</div>';
+          }
+
+          item.bindPopup(popup);
         }
       });
     }

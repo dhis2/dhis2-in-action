@@ -43,10 +43,16 @@ html, body {
 
 #map .leaflet-popup-content {
   margin: 8px 20px 8px 12px!important;
+  line-height: 18px;
 }
 
 #map .leaflet-popup-close-button {
   font-weight: normal;
+}
+
+#map .leaflet-popup-content h2 {
+  margin: 5px 0;
+  font-size: 14px;
 }
 
 .highcharts-credits {
