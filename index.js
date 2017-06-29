@@ -104,7 +104,6 @@ $(function() {
     }
   }
 
-
   function createChart() {
     var pilotByYear = [];
     var nationalByYear = [];
