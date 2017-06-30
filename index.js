@@ -55,8 +55,6 @@ $(function() {
       var pilot = row['gsx$pilot']['$t'] || null;
       var national = row['gsx$scale']['$t'] || null;
 
-      console.log(pilot, national);
-
       data[id] = {
         name: name,
         pilot: pilot,
