@@ -2,7 +2,6 @@ $(function() {
 
   var features;
   var data;
-  var chartData = {};
   var years = [];
   var lastYear;
 
@@ -47,34 +46,41 @@ $(function() {
     }
 
     lastYear = years[years.length - 1];
-    data = {};
+    data = {
+      country: {},
+      year: {}
+    };
 
     rows.forEach(function(row) {
       var id = row['gsx$code']['$t'];
       var name = row['gsx$name']['$t'];
-      var pilot = row['gsx$pilot']['$t'] || null;
-      var national = row['gsx$scale']['$t'] || null;
 
-      data[id] = {
+      var country = data.country[id] = {
         name: name,
-        pilot: pilot,
-        national: national
+        pilot: row['gsx$pilot']['$t'] || null,
+        national: row['gsx$scale']['$t'] || null,
+        tracker: row['gsx$tracker']['$t'] || null,
+        android: row['gsx$android']['$t'] || null
       };
 
       years.forEach(function(year) {
-        var value = row['gsx$y' + year]['$t'];
+        var letters = row['gsx$y' + year]['$t'];
 
-        if (value) {
-          data[id][year] = row['gsx$y' + year]['$t'] || null;
+        if (letters.length) {
+          country[year] = letters;
 
-          if (!chartData[year]) {
-            chartData[year] = {
+          if (!data.year[year]) {
+            data.year[year] = {
               p: 0,
               s: 0,
+              t: 0,
+              a: 0
             }
           }
 
-          chartData[year][value]++;
+          letters.split('').forEach(function(value) {
+            data.year[year][value]++;
+          });
         }
       });
     });
@@ -84,31 +90,43 @@ $(function() {
 
   function onDataLoad() {
     if (features && data) {
+      var countries = data.country
+
       createChart();
 
       features.eachLayer(function(item) {
 
         var code = item.feature.properties.CODE;
 
-        if (code && data[code] && data[code][lastYear]) {
-          var country = data[code];
-          var value = country[lastYear];
+        if (code && countries[code] && countries[code][lastYear]) {
+          var country = countries[code];
+          var letters = country[lastYear];
 
-          item.setStyle({
-            fillColor: colors[value]
-          });
+          if (letters.indexOf('p') !== -1 || letters.indexOf('s') !== -1) {
+            item.setStyle({
+              fillColor: letters.indexOf('p') !== -1 ? colors.p : colors.s
+            });
 
-          var popup = '<h2>' + country.name + '</h2>';
+            var popup = '<h2>' + country.name + '</h2>';
 
-          if (country.pilot) {
-            popup += '<div>Pilot: ' + country.pilot + '</div>';
+            if (country.pilot) {
+              popup += '<div>Pilot: ' + country.pilot + '</div>';
+            }
+
+            if (country.national) {
+              popup += '<div>National scale: ' + country.national + '</div>';
+            }
+
+            if (country.tracker) {
+              popup += '<div>Tracker: ' + country.tracker + '</div>';
+            }
+
+            if (country.android) {
+              popup += '<div>Android: ' + country.android + '</div>';
+            }
+
+            item.bindPopup(popup);
           }
-
-          if (country.national) {
-            popup += '<div>National scale: ' + country.national + '</div>';
-          }
-
-          item.bindPopup(popup);
         }
       });
     }
@@ -119,8 +137,8 @@ $(function() {
     var nationalByYear = [];
 
     years.forEach(function(year) {
-      pilotByYear.push(chartData[year].p);
-      nationalByYear.push(chartData[year].s);
+      pilotByYear.push(data.year[year].p);
+      nationalByYear.push(data.year[year].s);
     });
 
     Highcharts.chart('chart', {
