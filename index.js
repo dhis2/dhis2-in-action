@@ -146,7 +146,7 @@ $(function() {
         type: 'area'
       },
       title: {
-        text: 'Countries using DHIS 2'
+        text: null, // 'Countries using DHIS 2'
       },
       xAxis: {
         categories: years,
@@ -157,7 +157,7 @@ $(function() {
       },
       yAxis: {
         title: {
-          text: 'Number of countries'
+          text: 'Countries using DHIS 2'
         }
       },
       tooltip: {
@@ -182,7 +182,12 @@ $(function() {
         name: 'National scale',
         data: nationalByYear,
         color: colors.s
-      }]
+      }],
+      legend: {
+        // align: 'left',
+          verticalAlign: 'top',
+        floating: true,
+      }
     });
   }
 
