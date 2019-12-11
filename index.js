@@ -5,9 +5,13 @@ $(function() {
   var years = [];
   var lastYear;
 
+  var stripeColor = '#000000';
+  var stripeWidth = 3;
+
   var colors = {
     p: '#a8ddb5',
-    s: '#43a2ca'
+    s: '#43a2ca',
+    d: '#eeeeee' 
   };
 
   var bounds = [[-40, -110], [60, 165]];
@@ -18,13 +22,27 @@ $(function() {
     scrollWheelZoom: false
   });
 
+  var stripes = Object.keys(colors).reduce(function(obj, letter) {
+  
+    obj[letter] = new L.StripePattern({
+      angle: 45,
+      spaceColor: colors[letter],
+      spaceOpacity: 1,
+      weight: stripeWidth,
+      spaceWeight: 5,
+      color: stripeColor,
+    }).addTo(map);
+  
+    return obj;
+  }, {});
+
   map.fitBounds(bounds);
 
   $.getJSON('countries_indian_states.json', function(data) {
     features = L.geoJSON(data, {
       color: '#555',
       weight: 1,
-      fillColor: '#eee',
+      fillColor: colors.d,
       fillOpacity: 0.8
     }).addTo(map);
     onDataLoad();
@@ -60,7 +78,8 @@ $(function() {
         pilot: row['gsx$pilot']['$t'] || null,
         national: row['gsx$scale']['$t'] || null,
         tracker: row['gsx$tracker']['$t'] || null,
-        android: row['gsx$android']['$t'] || null
+        android: row['gsx$android']['$t'] || null,
+        emis: row['gsx$emis']['$t'] || null
       };
 
       years.forEach(function(year) {
@@ -74,7 +93,8 @@ $(function() {
               p: 0,
               s: 0,
               t: 0,
-              a: 0
+              a: 0,
+              e: 0
             }
           }
 
@@ -87,6 +107,30 @@ $(function() {
 
     onDataLoad();
   });
+
+  function hasLetter(letters, letter) {
+    return letters.indexOf(letter) !== -1
+  }
+
+  function getStyle(letters) {
+    var isPilot = letters.indexOf('p') !== -1;
+    var isNational = letters.indexOf('s') !== -1;
+    var isEmis = letters.indexOf('e') !== -1;
+
+    if (!isPilot && !isNational && !isEmis) {
+      return {};
+    }
+
+    if (!isEmis) {
+      return {
+        fillColor: isPilot ? colors.p : colors.s
+      }
+    }
+
+    return {
+      fillPattern: stripes[isPilot ? 'p' : isNational ? 's' : 'd'],
+    }
+  }
 
   function onDataLoad() {
     if (features && data) {
@@ -102,10 +146,8 @@ $(function() {
           var country = countries[code];
           var letters = country[lastYear];
 
-          if (letters.indexOf('p') !== -1 || letters.indexOf('s') !== -1) {
-            item.setStyle({
-              fillColor: letters.indexOf('p') !== -1 ? colors.p : colors.s
-            });
+          if (letters.indexOf('p') !== -1 || letters.indexOf('s') !== -1 || letters.indexOf('e') !== -1) {
+            item.setStyle(getStyle(letters));
 
             var popup = '<h2>' + country.name + '</h2>';
 
@@ -125,6 +167,10 @@ $(function() {
               popup += '<div>Android: ' + country.android + '</div>';
             }
 
+            if (country.emis) {
+              popup += '<div>Education pilot: ' + country.emis + '</div>';
+            }
+
             item.bindPopup(popup);
           }
         }
@@ -135,10 +181,12 @@ $(function() {
   function createChart() {
     var pilotByYear = [];
     var nationalByYear = [];
+    var emisByYear = [];
 
     years.forEach(function(year) {
       pilotByYear.push(data.year[year].p);
       nationalByYear.push(data.year[year].s);
+      emisByYear.push(data.year[year].e);
     });
 
     Highcharts.chart('chart', {
@@ -181,12 +229,30 @@ $(function() {
       }, {
         name: 'National scale',
         data: nationalByYear,
-        color: colors.s
+        color: colors.s,
+      }, {
+        name: 'Education pilot',
+        data: emisByYear,
+        color: {
+          pattern: {
+              path: {
+                  d: 'M 0 0 L 10 10 M 9 -1 L 11 1 M -1 9 L 1 11',
+                  strokeWidth: stripeWidth,
+              },
+              backgroundColor: colors.s,
+              color: stripeColor,
+              width: 10,
+              height: 10,
+              opacity: 0.8
+          }
+        }
       }],
       legend: {
-        // align: 'left',
-          verticalAlign: 'top',
+        verticalAlign: 'top',
         floating: true,
+        itemStyle: {
+          fontSize: '14px',
+        }
       }
     });
   }
