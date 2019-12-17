@@ -14,7 +14,7 @@ $(function() {
     d: '#eeeeee' 
   };
 
-  var bounds = [[-40, -110], [60, 165]];
+  var bounds = [[-33, -90], [48, 140]];
   var map = L.map('map', {
     zoomSnap: 0.2,
     zoomDelta: 1,
@@ -37,6 +37,8 @@ $(function() {
   }, {});
 
   map.fitBounds(bounds);
+
+  // L.rectangle(bounds).addTo(map);
 
   $.getJSON('countries_indian_states.json', function(data) {
     features = L.geoJSON(data, {
@@ -152,11 +154,11 @@ $(function() {
             var popup = '<h2>' + country.name + '</h2>';
 
             if (country.pilot) {
-              popup += '<div>Pilot: ' + country.pilot + '</div>';
+              popup += '<div>Health pilot: ' + country.pilot + '</div>';
             }
 
             if (country.national) {
-              popup += '<div>National scale: ' + country.national + '</div>';
+              popup += '<div>Health national scale: ' + country.national + '</div>';
             }
 
             if (country.tracker) {
@@ -223,11 +225,11 @@ $(function() {
         }
       },
       series: [{
-        name: 'Pilot',
+        name: 'Health pilot',
         data: pilotByYear,
         color: colors.p
       }, {
-        name: 'National scale',
+        name: 'Health national scale',
         data: nationalByYear,
         color: colors.s,
       }, {
