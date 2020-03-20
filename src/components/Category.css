@@ -1,11 +1,25 @@
 .Category {
-  background-color: #edf7ff;
   padding: 10px;
   margin: 10px 0;
+}
+
+.Category-selected {
+  background-color: #edf7ff;
 }
 
 .Category h2 {
   font-size: 14px;
   font-weight: normal;
   margin: 0;
+}
+
+.Category-count {
+  font-size: 20px;
+  font-weight: bold;
+  padding-right: 6px;
+}
+
+.Category-title {
+  font-weight: bold;
+  padding-right: 6px;
 }

@@ -27,19 +27,3 @@ body {
   bottom: 0;
   right: 0;
 }
-
-.App-map {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 58%;
-}
-
-.App-chart {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40%;
-}

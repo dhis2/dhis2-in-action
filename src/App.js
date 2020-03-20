@@ -1,13 +1,15 @@
 import React from "react";
 import Sidebar from "./components/Sidebar";
+import Map from "./components/Map";
+import Chart from "./components/Chart";
 import "./App.css";
 
 const App = () => (
   <div className="App">
     <Sidebar />
     <div className="App-main">
-      <div className="App-map">MAP</div>
-      <div className="App-chart">CHART</div>
+      <Map />
+      <Chart />
     </div>
   </div>
 );

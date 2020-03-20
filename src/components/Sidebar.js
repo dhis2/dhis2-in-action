@@ -8,10 +8,8 @@ const data = [
     title: "Health System",
     count: 98,
     legend: [
-      {
-        p: { name: "National", color: "#009688" },
-        s: { name: "Pilot", color: "#009688" }
-      }
+      { code: "p", name: "National", color: "#009688" },
+      { code: "s", name: "Pilot", color: "#B2DFDB" }
     ],
     selected: false
   },
@@ -20,10 +18,8 @@ const data = [
     title: "Health System",
     count: 98,
     legend: [
-      {
-        p: { name: "National", color: "#009688" },
-        s: { name: "Pilot", color: "#009688" }
-      }
+      { code: "p", name: "National", color: "#009688" },
+      { code: "s", name: "Pilot", color: "#B2DFDB" }
     ],
     selected: true
   }
