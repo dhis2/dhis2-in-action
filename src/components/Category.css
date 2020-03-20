@@ -1,0 +1,11 @@
+.Category {
+  background-color: #edf7ff;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.Category h2 {
+  font-size: 14px;
+  font-weight: normal;
+  margin: 0;
+}
