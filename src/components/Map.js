@@ -1,31 +1,38 @@
-import React, { useRef, useEffect } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { map, geoJSON } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "./Map.css";
 
-const Map = props => {
+const Map = ({ category, data }) => {
+  const [instance, setInstance] = useState();
+  const [features, setFeatures] = useState();
   const mapContainer = useRef();
 
   useEffect(() => {
-    const instance = map(mapContainer.current);
+    setInstance(
+      map(mapContainer.current).fitBounds([
+        [-40, -110],
+        [60, 165]
+      ])
+    );
+  }, [mapContainer]);
 
-    instance.fitBounds([
-      [-40, -110],
-      [60, 165]
-    ]);
+  useEffect(() => {
+    if (instance && features) {
+      geoJSON(features, {
+        color: "#555",
+        weight: 1,
+        fillColor: "#eee",
+        fillOpacity: 0.8
+      }).addTo(instance);
+    }
+  }, [instance, features]);
 
+  useEffect(() => {
     fetch("./countries_indian_states.json")
       .then(response => response.json())
-      .then(data => {
-        // Work with JSON data here
-        const features = geoJSON(data, {
-          color: "#555",
-          weight: 1,
-          fillColor: "#eee",
-          fillOpacity: 0.8
-        }).addTo(instance);
-      });
-  }, [mapContainer]);
+      .then(setFeatures);
+  }, []);
 
   return <div ref={mapContainer} className="Map"></div>;
 };

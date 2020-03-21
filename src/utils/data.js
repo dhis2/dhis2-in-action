@@ -8,8 +8,7 @@ export const categories = [
     legend: [
       { code: "p", name: "National", color: "#009688" },
       { code: "s", name: "Pilot", color: "#B2DFDB" }
-    ],
-    selected: false
+    ]
   },
   {
     id: "health2",
@@ -18,8 +17,7 @@ export const categories = [
     legend: [
       { code: "p", name: "National", color: "#009688" },
       { code: "s", name: "Pilot", color: "#B2DFDB" }
-    ],
-    selected: true
+    ]
   }
 ];
 
