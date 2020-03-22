@@ -9,6 +9,33 @@ export const categories = [
       { code: "s", name: "National", color: "#009688" },
       { code: "p", name: "Pilot", color: "#B2DFDB" }
     ]
+  },
+  {
+    id: "covid-19",
+    title: "COVID-19",
+    count: 98,
+    legend: [
+      { code: "c", name: "Operational", color: "#009688" },
+      { code: "v", name: "In development", color: "#B2DFDB" }
+    ]
+  },
+  {
+    id: "tracker",
+    title: "Tracker",
+    count: 98,
+    legend: [{ code: "t", name: "Tracker", color: "#009688" }]
+  },
+  {
+    id: "android",
+    title: "Android app",
+    count: 98,
+    legend: [{ code: "a", name: "Android app", color: "#009688" }]
+  },
+  {
+    id: "emis",
+    title: "Education System",
+    count: 98,
+    legend: [{ code: "e", name: "Education System", color: "#009688" }]
   }
 ];
 

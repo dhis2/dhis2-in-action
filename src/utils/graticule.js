@@ -10,8 +10,6 @@ const Graticule = GeoJSON.extend({
   },
 
   initialize(options) {
-    console.log("");
-
     L.Util.setOptions(this, options);
     this._layers = {};
 

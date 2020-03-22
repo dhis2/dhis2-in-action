@@ -6,6 +6,8 @@ import Graticule from "../utils/graticule";
 import { categories } from "../utils/data";
 import "./Map.css";
 
+const noDataColor = "#fff";
+
 const Map = ({ category, data }) => {
   const [instance, setInstance] = useState();
   const [layer, setLayer] = useState();
@@ -56,7 +58,7 @@ const Map = ({ category, data }) => {
             geoJSON(features, {
               color: "#777",
               weight: 1,
-              fillColor: "#fff",
+              fillColor: noDataColor,
               fillOpacity: 0.8
             }).addTo(instance)
           )
@@ -68,6 +70,12 @@ const Map = ({ category, data }) => {
     if (layer && category && data) {
       const { countries, lastYear } = data;
       const { legend } = categories.find(c => c.id === category);
+
+      layer.eachLayer(item =>
+        item.setStyle({
+          fillColor: noDataColor
+        })
+      );
 
       layer.eachLayer(item => {
         const code = item.feature.properties.CODE;
