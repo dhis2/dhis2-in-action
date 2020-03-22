@@ -6,3 +6,22 @@
   height: 58%;
   background: #fff;
 }
+
+.leaflet-left {
+  right: 10px;
+  left: auto;
+}
+
+.leaflet-bar {
+  border-radius: 1px;
+  box-shadow: none;
+  border: 1px solid #ccc;
+}
+
+.leaflet-bar a {
+  border-radius: 0 !important;
+}
+
+.leaflet-control-attribution {
+  display: none;
+}

@@ -6,17 +6,8 @@ export const categories = [
     title: "Health System",
     count: 98,
     legend: [
-      { code: "p", name: "National", color: "#009688" },
-      { code: "s", name: "Pilot", color: "#B2DFDB" }
-    ]
-  },
-  {
-    id: "health2",
-    title: "Health System",
-    count: 98,
-    legend: [
-      { code: "p", name: "National", color: "#009688" },
-      { code: "s", name: "Pilot", color: "#B2DFDB" }
+      { code: "s", name: "National", color: "#009688" },
+      { code: "p", name: "Pilot", color: "#B2DFDB" }
     ]
   }
 ];
