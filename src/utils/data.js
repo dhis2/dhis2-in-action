@@ -57,11 +57,11 @@ const parseData = data => {
 
     const country = (countries[id] = {
       name: name,
-      pilot: row["gsx$pilot"]["$t"] || null,
-      national: row["gsx$scale"]["$t"] || null,
-      tracker: row["gsx$tracker"]["$t"] || null,
-      android: row["gsx$android"]["$t"] || null,
-      emis: row["gsx$emis"]["$t"] || null
+      p: row["gsx$pilot"]["$t"] || null,
+      s: row["gsx$scale"]["$t"] || null,
+      t: row["gsx$tracker"]["$t"] || null,
+      a: row["gsx$android"]["$t"] || null,
+      e: row["gsx$emis"]["$t"] || null
     });
 
     years.forEach(y => {

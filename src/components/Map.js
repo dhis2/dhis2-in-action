@@ -93,6 +93,24 @@ const Map = ({ category, data }) => {
           });
         }
       });
+
+      layer.bindPopup(({ feature }) => {
+        const { CODE, NAME } = feature.properties;
+        const country = data.countries[CODE];
+        const name = `<h2>${NAME}</h2>`;
+
+        if (!country) {
+          return name;
+        }
+
+        const items = legend
+          .map(({ code, name }) =>
+            country[code] ? `${name}: ${country[code]}` : null
+          )
+          .filter(item => item);
+
+        return `${name}${items.join("<br/>")}`;
+      });
     }
   }, [layer, category, data]);
 

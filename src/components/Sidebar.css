@@ -22,7 +22,8 @@
 
 .Sidebar-header p {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
+  line-height: 20px;
   color: #4a5768;
   padding-bottom: 10px;
 }
