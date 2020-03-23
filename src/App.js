@@ -15,7 +15,7 @@ const App = () => {
 
   return (
     <div className="App">
-      <Sidebar category={category} onChange={setCategory} />
+      <Sidebar category={category} data={data} onChange={setCategory} />
       <div className="App-main">
         <Map category={category} data={data} />
         <Chart category={category} data={data} />

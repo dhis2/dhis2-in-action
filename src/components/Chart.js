@@ -17,23 +17,7 @@ const Chart = ({ category, data }) => {
           text: null // 'Countries using DHIS 2'
         },
         xAxis: {
-          categories: [
-            "2006",
-            "2007",
-            "2008",
-            "2009",
-            "2010",
-            "2011",
-            "2012",
-            "2013",
-            "2014",
-            "2015",
-            "2016",
-            "2017",
-            "2018",
-            "2019",
-            "2020"
-          ],
+          // categories: [],
           tickmarkPlacement: "on",
           title: {
             enabled: false
@@ -68,15 +52,20 @@ const Chart = ({ category, data }) => {
 
   useEffect(() => {
     if ((instance, category, data)) {
-      const { series, yAxis } = instance;
+      const { series, xAxis, yAxis } = instance;
       const { title, legend } = categories.find(c => c.id === category);
-      const { years } = data;
+      const { years, year } = data;
+
+      const yearRange = years.slice(
+        years.findIndex(y => legend.some(({ code }) => year[y][code]))
+      );
 
       if (series.length) {
         series[0].remove();
         series.forEach(s => s.remove());
       }
 
+      xAxis[0].setCategories(yearRange);
       yAxis[0].setTitle({ text: `${title} implementations` });
 
       legend
@@ -85,7 +74,7 @@ const Chart = ({ category, data }) => {
         .forEach(({ code, name, color }) => {
           instance.addSeries({
             name: name,
-            data: years.map(y => data.year[y][code]),
+            data: yearRange.map(y => year[y][code]),
             color: color
           });
         });
