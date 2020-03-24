@@ -5,6 +5,7 @@
   right: 0;
   height: 58%;
   background: #fff;
+  box-sizing: border-box;
 }
 
 .leaflet-left {

@@ -5,32 +5,37 @@ export const categories = [
     id: "health",
     title: "Health System",
     legend: [
-      { code: "s", name: "National", color: "#009688" },
+      { code: "s", name: "National / State", color: "#009688" },
       { code: "p", name: "Pilot", color: "#B2DFDB" }
-    ]
+    ],
+    showChart: true
   },
   {
     id: "covid-19",
     title: "COVID-19",
     legend: [
-      { code: "c", name: "Operational", color: "#009688" },
-      { code: "v", name: "In development", color: "#B2DFDB" }
-    ]
+      { code: "c", name: "Operational", color: "#d95f0e" },
+      { code: "v", name: "In development", color: "#fec44f" }
+    ],
+    showChart: false
   },
   {
     id: "tracker",
     title: "Tracker",
-    legend: [{ code: "t", name: "Tracker", color: "#009688" }]
+    legend: [{ code: "t", name: "Tracker", color: "#e34a33" }],
+    showChart: true
   },
   {
     id: "android",
     title: "Android app",
-    legend: [{ code: "a", name: "Android app", color: "#009688" }]
+    legend: [{ code: "a", name: "Android app", color: "#238443" }],
+    showChart: true
   },
   {
     id: "emis",
     title: "Education System",
-    legend: [{ code: "e", name: "Education System", color: "#009688" }]
+    legend: [{ code: "e", name: "Education System", color: "#2c7fb8" }],
+    showChart: false
   }
 ];
 

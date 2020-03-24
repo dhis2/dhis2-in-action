@@ -3,7 +3,7 @@ import { chart } from "highcharts";
 import { categories } from "../utils/data";
 import "./Chart.css";
 
-const Chart = ({ category, data }) => {
+const Chart = ({ category, data, show }) => {
   const [instance, setInstance] = useState();
   const container = useRef();
 
@@ -17,7 +17,6 @@ const Chart = ({ category, data }) => {
           text: null // 'Countries using DHIS 2'
         },
         xAxis: {
-          // categories: [],
           tickmarkPlacement: "on",
           title: {
             enabled: false
@@ -81,7 +80,14 @@ const Chart = ({ category, data }) => {
     }
   }, [instance, category, data]);
 
-  return <div id="chart" ref={container} className="Chart"></div>;
+  return (
+    <div
+      id="chart"
+      ref={container}
+      className={`Chart Chart-${show ? "show" : "hide"}`}
+      // className="Chart"
+    ></div>
+  );
 };
 
 export default Chart;

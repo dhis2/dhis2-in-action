@@ -8,8 +8,8 @@ const Sidebar = ({ category, data, onChange }) => (
     <div className="Sidebar-header">
       <h1>DHIS2 in action</h1>
       <p>
-        DHIS2 is in use all over the world. Check out different use cases around
-        the world with this interactive map.
+        DHIS2 is in use all over the world. Check out different use cases in
+        countries and Indian states with this interactive map.
       </p>
     </div>
     {categories.map(item => (

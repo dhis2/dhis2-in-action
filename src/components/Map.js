@@ -8,7 +8,12 @@ import "./Map.css";
 
 const noDataColor = "#fff";
 
-const Map = ({ category, data }) => {
+const bounds = [
+  [-40, -80],
+  [50, 165]
+];
+
+const Map = ({ category, data, height }) => {
   const [instance, setInstance] = useState();
   const [layer, setLayer] = useState();
   const container = useRef();
@@ -23,12 +28,16 @@ const Map = ({ category, data }) => {
             resolutions: [50000, 40000, 30000, 20000, 10000, 5000, 2500, 1250]
           }
         )
-      }).fitBounds([
-        [-40, -80],
-        [60, 165]
-      ])
+      }).fitBounds(bounds)
     );
   }, [container]);
+
+  useEffect(() => {
+    if (instance) {
+      instance.invalidateSize();
+      instance.fitBounds(bounds);
+    }
+  }, [instance, height]);
 
   useEffect(() => {
     if (instance) {
@@ -104,17 +113,31 @@ const Map = ({ category, data }) => {
         }
 
         const items = legend
-          .map(({ code, name }) =>
-            country[code] ? `${name}: ${country[code]}` : null
-          )
-          .filter(item => item);
+          .map(i => ({
+            ...i,
+            year: data.years.find(
+              y => country[y] && country[y].includes(i.code)
+            )
+          }))
+          .filter(i => i.year);
 
-        return `${name}${items.join("<br/>")}`;
+        const content = items.map(
+          ({ name, year }) =>
+            `${
+              name.includes("National")
+                ? CODE.includes("-")
+                  ? "State"
+                  : "National"
+                : name
+            }: ${year}`
+        );
+
+        return `${name}${content.join("<br/>")}`;
       });
     }
   }, [layer, category, data]);
 
-  return <div ref={container} className="Map"></div>;
+  return <div ref={container} className="Map" style={{ height }}></div>;
 };
 
 export default Map;
