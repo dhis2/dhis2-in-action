@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/dhis2-in-action/static/css/main.49bcf208.chunk.css",
+    "main.js": "/dhis2-in-action/static/js/main.cd5644e9.chunk.js",
+    "main.js.map": "/dhis2-in-action/static/js/main.cd5644e9.chunk.js.map",
+    "runtime-main.js": "/dhis2-in-action/static/js/runtime-main.92469a92.js",
+    "runtime-main.js.map": "/dhis2-in-action/static/js/runtime-main.92469a92.js.map",
+    "static/css/2.7c35e809.chunk.css": "/dhis2-in-action/static/css/2.7c35e809.chunk.css",
+    "static/js/2.9c104618.chunk.js": "/dhis2-in-action/static/js/2.9c104618.chunk.js",
+    "static/js/2.9c104618.chunk.js.map": "/dhis2-in-action/static/js/2.9c104618.chunk.js.map",
+    "index.html": "/dhis2-in-action/index.html",
+    "precache-manifest.cfb8d8f1f3e0e56ad36195aa4b8ae84c.js": "/dhis2-in-action/precache-manifest.cfb8d8f1f3e0e56ad36195aa4b8ae84c.js",
+    "service-worker.js": "/dhis2-in-action/service-worker.js",
+    "static/css/2.7c35e809.chunk.css.map": "/dhis2-in-action/static/css/2.7c35e809.chunk.css.map",
+    "static/css/main.49bcf208.chunk.css.map": "/dhis2-in-action/static/css/main.49bcf208.chunk.css.map",
+    "static/js/2.9c104618.chunk.js.LICENSE.txt": "/dhis2-in-action/static/js/2.9c104618.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.92469a92.js",
+    "static/css/2.7c35e809.chunk.css",
+    "static/js/2.9c104618.chunk.js",
+    "static/css/main.49bcf208.chunk.css",
+    "static/js/main.cd5644e9.chunk.js"
+  ]
+}
