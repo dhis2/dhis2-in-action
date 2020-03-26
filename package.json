@@ -2,7 +2,7 @@
   "name": "dhis2-in-action",
   "version": "0.1.0",
   "private": true,
-  "homepage": "/dhis2-in-action",
+  "homepage": "https://dhis2.github.io/dhis2-in-action",
   "dependencies": {
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
@@ -15,11 +15,16 @@
     "react-dom": "^16.13.1",
     "react-scripts": "3.4.0"
   },
+  "devDependencies": {
+    "gh-pages": "^2.2.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "yarn build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
