@@ -1,6 +1,6 @@
 .Category {
   padding: 10px;
-  margin: 10px 0;
+  margin: 5px 0;
   cursor: pointer;
 }
 
@@ -9,18 +9,8 @@
 }
 
 .Category h2 {
-  font-size: 14px;
-  font-weight: normal;
+  font-size: 16px;
+  font-weight: bold;
   margin: 0;
-}
-
-.Category-count {
-  font-size: 20px;
-  font-weight: bold;
-  padding-right: 6px;
-}
-
-.Category-title {
-  font-weight: bold;
-  padding-right: 6px;
+  line-height: 20px;
 }

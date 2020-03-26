@@ -3,7 +3,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 320px;
+  width: 250px;
   border-right: 1px solid #eee;
   padding: 10px;
   box-sizing: border-box;
@@ -11,6 +11,7 @@
 
 .Sidebar-header {
   border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
 }
 
 .Sidebar-header h1 {

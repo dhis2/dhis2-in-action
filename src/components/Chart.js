@@ -59,9 +59,8 @@ const Chart = ({ category, data, show }) => {
         years.findIndex(y => legend.some(({ code }) => year[y][code]))
       );
 
-      if (series.length) {
+      while (series.length) {
         series[0].remove();
-        series.forEach(s => s.remove());
       }
 
       xAxis[0].setCategories(yearRange);
@@ -70,13 +69,13 @@ const Chart = ({ category, data, show }) => {
       legend
         .slice()
         .reverse()
-        .forEach(({ code, name, color }) => {
+        .forEach(({ code, name, color }) =>
           instance.addSeries({
             name: name,
             data: yearRange.map(y => year[y][code]),
             color: color
-          });
-        });
+          })
+        );
     }
   }, [instance, category, data]);
 
@@ -85,7 +84,6 @@ const Chart = ({ category, data, show }) => {
       id="chart"
       ref={container}
       className={`Chart Chart-${show ? "show" : "hide"}`}
-      // className="Chart"
     ></div>
   );
 };

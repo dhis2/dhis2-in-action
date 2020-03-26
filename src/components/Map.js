@@ -9,7 +9,7 @@ import "./Map.css";
 const noDataColor = "#fff";
 
 const bounds = [
-  [-40, -80],
+  [-40, -90],
   [50, 165]
 ];
 
@@ -27,7 +27,8 @@ const Map = ({ category, data, height }) => {
           {
             resolutions: [50000, 40000, 30000, 20000, 10000, 5000, 2500, 1250]
           }
-        )
+        ),
+        maxZoom: 7
       }).fitBounds(bounds)
     );
   }, [container]);
@@ -45,17 +46,8 @@ const Map = ({ category, data, height }) => {
         sphere: true,
         style: {
           opacity: 0,
-          fillColor: "#f5fbfe",
+          fillColor: "#edf7ff",
           fillOpacity: 1,
-          clickable: false
-        }
-      }).addTo(instance);
-
-      new Graticule({
-        style: {
-          color: "#fafafa",
-          weight: 1,
-          opacity: 1,
           clickable: false
         }
       }).addTo(instance);
@@ -65,13 +57,14 @@ const Map = ({ category, data, height }) => {
         .then(features =>
           setLayer(
             geoJSON(features, {
-              color: "#777",
+              color: "#555",
               weight: 1,
               fillColor: noDataColor,
-              fillOpacity: 0.8
+              fillOpacity: 0.75
             }).addTo(instance)
           )
-        );
+        )
+        .catch(error => console.log(error));
     }
   }, [instance, setLayer]);
 
@@ -92,6 +85,15 @@ const Map = ({ category, data, height }) => {
         if (code && countries[code] && countries[code][lastYear]) {
           const country = countries[code];
           const letters = country[lastYear];
+
+          // India: show country or states
+          if (code === "IN") {
+            if (legend.some(({ code }) => letters.includes(code))) {
+              item.bringToFront();
+            } else {
+              item.bringToBack();
+            }
+          }
 
           legend.forEach(({ code, color }) => {
             if (letters.indexOf(code) !== -1) {

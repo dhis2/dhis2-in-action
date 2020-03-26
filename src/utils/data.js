@@ -3,10 +3,11 @@ import fetchJsonp from "fetch-jsonp";
 export const categories = [
   {
     id: "health",
-    title: "Health System",
+    title: "Health Information System",
     legend: [
-      { code: "s", name: "National / State", color: "#009688" },
-      { code: "p", name: "Pilot", color: "#B2DFDB" }
+      { code: "s", name: "National", color: "#238443" },
+      { code: "i", name: "Indian State", color: "#78c679" },
+      { code: "p", name: "Pilot", color: "#d9f0a3" }
     ],
     showChart: true
   },
@@ -28,13 +29,13 @@ export const categories = [
   {
     id: "android",
     title: "Android app",
-    legend: [{ code: "a", name: "Android app", color: "#238443" }],
+    legend: [{ code: "a", name: "Android app", color: "#2ca25f" }],
     showChart: true
   },
   {
     id: "emis",
-    title: "Education System",
-    legend: [{ code: "e", name: "Education System", color: "#2c7fb8" }],
+    title: "Education Management Information System (EMIS)",
+    legend: [{ code: "e", name: "DHIS2 for Education", color: "#1d91c0" }],
     showChart: false
   }
 ];
@@ -61,29 +62,31 @@ const parseData = data => {
     const name = row["gsx$name"]["$t"];
 
     const country = (countries[id] = {
-      name: name,
-      p: row["gsx$pilot"]["$t"] || null,
-      s: row["gsx$scale"]["$t"] || null,
-      t: row["gsx$tracker"]["$t"] || null,
-      a: row["gsx$android"]["$t"] || null,
-      e: row["gsx$emis"]["$t"] || null
+      name: name
     });
 
     years.forEach(y => {
-      const letters = row["gsx$y" + y]["$t"];
+      let letters = row["gsx$y" + y]["$t"];
+
+      // Remove and fix in google spreadsheet
+      if (id.startsWith("IN-")) {
+        // s/p is not valid for indian states
+        letters = letters.replace("s", "").replace("p", "");
+      }
 
       if (letters.length) {
         country[y] = letters;
 
         if (!year[y]) {
           year[y] = {
-            p: 0,
-            s: 0,
-            t: 0,
-            a: 0,
-            e: 0,
-            c: 0,
-            v: 0
+            p: 0, // pilot
+            s: 0, // national scale
+            i: 0, // indian state
+            t: 0, // tracker
+            a: 0, // android
+            e: 0, // education
+            c: 0, // covid-19
+            v: 0 // covid-19 (development)
           };
         }
 
