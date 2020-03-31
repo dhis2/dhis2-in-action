@@ -1,0 +1,46 @@
+.SidebarToggle {
+  color: #4a5768;
+  border: none;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.SidebarToggle span {
+  font-weight: bold;
+  vertical-align: text-top;
+  display: inline-block;
+  margin-top: -1px;
+}
+
+.SidebarToggle:hover {
+  color: #000;
+}
+
+.SidebarToggle-open {
+  z-index: 999;
+  background-color: #fff;
+  position: absolute;
+  cursor: pointer;
+  border: 1px solid #eee;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.SidebarToggle-open span {
+  padding-left: 5px;
+}
+
+.SidebarToggle-open:hover {
+  border: 1px solid #555;
+}
+
+.SidebarToggle-close {
+  padding: 5px 15px 5px 0;
+  margin-bottom: 15px;
+}
+
+.SidebarToggle-close span {
+  padding-right: 5px;
+}
