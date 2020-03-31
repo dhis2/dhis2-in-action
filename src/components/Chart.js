@@ -11,7 +11,8 @@ const Chart = ({ category, data, show }) => {
     setInstance(
       chart("chart", {
         chart: {
-          type: "area"
+          type: "area",
+          marginTop: 20
         },
         title: {
           text: null // 'Countries using DHIS 2'
@@ -54,6 +55,8 @@ const Chart = ({ category, data, show }) => {
       const { series, xAxis, yAxis } = instance;
       const { title, legend } = categories.find(c => c.id === category);
       const { years, year } = data;
+
+      instance.reflow();
 
       const yearRange = years.slice(
         years.findIndex(y => legend.some(({ code }) => year[y][code]))

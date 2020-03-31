@@ -1,8 +1,8 @@
 {
   "name": "dhis2-in-action",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "homepage": "https://dhis2.github.io/dhis2-in-action",
+  "homepage": "https://mastermaps.com/dhis2-in-action",
   "dependencies": {
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
@@ -13,7 +13,9 @@
     "proj4leaflet": "^1.0.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-scripts": "3.4.0"
+    "react-full-screen": "^0.2.4",
+    "react-scripts": "3.4.0",
+    "react-sidebar": "^3.0.2"
   },
   "devDependencies": {
     "gh-pages": "^2.2.0"

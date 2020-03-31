@@ -10,6 +10,7 @@
 
 .leaflet-left {
   right: 10px;
+  top: 44px;
   left: auto;
 }
 
@@ -19,7 +20,15 @@
   border: 1px solid #ccc;
 }
 
+.leaflet-touch .leaflet-bar {
+  border: 1px solid #ccc !important;
+}
+
 .leaflet-bar a {
+  width: 30px;
+  height: 30px;
+  line-height: 28px;
+  font-size: 20px;
   border-radius: 0 !important;
 }
 

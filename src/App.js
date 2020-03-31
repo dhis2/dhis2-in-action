@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Fullscreen from "./components/Fullscreen";
 import Sidebar from "./components/Sidebar";
 import Map from "./components/Map";
 import Chart from "./components/Chart";
@@ -33,17 +34,16 @@ const App = () => {
   }, [category]);
 
   return (
-    <div className="App">
-      <Sidebar category={category} data={data} onChange={setCategory} />
-      <div className="App-main">
+    <Fullscreen>
+      <Sidebar category={category} data={data} onSelect={setCategory}>
         <Map
           category={category}
           data={data}
           height={showChart ? "58%" : "100%"}
         />
         <Chart category={category} data={data} show={showChart} />
-      </div>
-    </div>
+      </Sidebar>
+    </Fullscreen>
   );
 };
 

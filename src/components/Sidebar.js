@@ -1,27 +1,47 @@
-import React from "react";
-import Category from "./Category";
-import { categories } from "../utils/data";
+import React, { useState, useEffect } from "react";
+import ReactSidebar from "react-sidebar";
+import SidebarContent from "./SidebarContent";
+import SidebarToggle from "./SidebarToggle";
 import "./Sidebar.css";
 
-const Sidebar = ({ category, data, onChange }) => (
-  <div className="Sidebar">
-    <div className="Sidebar-header">
-      <h1>DHIS2 in action</h1>
-      <p>
-        DHIS2 is in use all over the world. Check out different use cases with
-        this interactive map.
-      </p>
-    </div>
-    {categories.map(item => (
-      <Category
-        key={item.id}
-        onClick={onChange}
-        selected={category === item.id}
-        data={data}
-        {...item}
-      />
-    ))}
-  </div>
-);
+const App = ({ category, data, onSelect, children }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarDocked, setSidebarDocked] = useState(false);
 
-export default Sidebar;
+  useEffect(() => {
+    const mql = window.matchMedia(`(min-width: 700px)`);
+    mql.addListener(() => setSidebarDocked(mql.matches));
+    setSidebarDocked(mql.matches);
+  }, []);
+
+  return (
+    <ReactSidebar
+      sidebar={
+        <SidebarContent
+          category={category}
+          data={data}
+          onSelect={onSelect}
+          isDocked={sidebarDocked}
+          onClose={() => setSidebarOpen(false)}
+        />
+      }
+      open={sidebarOpen}
+      docked={sidebarDocked}
+      onSetOpen={() => setSidebarOpen(true)}
+      rootClassName="App"
+      contentClassName="App-main"
+      overlayClassName="App-overlay"
+      sidebarClassName="Sidebar"
+    >
+      {sidebarOpen && !sidebarDocked && (
+        <div className="App-mask" onClick={() => setSidebarOpen(false)}></div>
+      )}
+      {children}
+      {!sidebarOpen && !sidebarDocked && (
+        <SidebarToggle type="open" onClick={() => setSidebarOpen(true)} />
+      )}
+    </ReactSidebar>
+  );
+};
+
+export default App;
