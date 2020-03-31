@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.css": "/dhis2-in-action/static/css/main.daa4a996.chunk.css",
+    "main.css": "/dhis2-in-action/static/css/main.895a6864.chunk.css",
     "main.js": "/dhis2-in-action/static/js/main.6cfe868d.chunk.js",
     "main.js.map": "/dhis2-in-action/static/js/main.6cfe868d.chunk.js.map",
     "runtime-main.js": "/dhis2-in-action/static/js/runtime-main.92469a92.js",
@@ -9,17 +9,17 @@
     "static/js/2.1768bbf5.chunk.js": "/dhis2-in-action/static/js/2.1768bbf5.chunk.js",
     "static/js/2.1768bbf5.chunk.js.map": "/dhis2-in-action/static/js/2.1768bbf5.chunk.js.map",
     "index.html": "/dhis2-in-action/index.html",
-    "precache-manifest.693fd9f38e087f826c7628df94b14bde.js": "/dhis2-in-action/precache-manifest.693fd9f38e087f826c7628df94b14bde.js",
+    "precache-manifest.d8e6c8787c13052a65970843a9967686.js": "/dhis2-in-action/precache-manifest.d8e6c8787c13052a65970843a9967686.js",
     "service-worker.js": "/dhis2-in-action/service-worker.js",
     "static/css/2.7c35e809.chunk.css.map": "/dhis2-in-action/static/css/2.7c35e809.chunk.css.map",
-    "static/css/main.daa4a996.chunk.css.map": "/dhis2-in-action/static/css/main.daa4a996.chunk.css.map",
+    "static/css/main.895a6864.chunk.css.map": "/dhis2-in-action/static/css/main.895a6864.chunk.css.map",
     "static/js/2.1768bbf5.chunk.js.LICENSE.txt": "/dhis2-in-action/static/js/2.1768bbf5.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.92469a92.js",
     "static/css/2.7c35e809.chunk.css",
     "static/js/2.1768bbf5.chunk.js",
-    "static/css/main.daa4a996.chunk.css",
+    "static/css/main.895a6864.chunk.css",
     "static/js/main.6cfe868d.chunk.js"
   ]
 }
