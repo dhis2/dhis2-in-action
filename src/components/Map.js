@@ -9,7 +9,7 @@ import "./Map.css";
 const noDataColor = "#fff";
 
 const bounds = [
-  [-40, -90],
+  [-40, -100],
   [50, 165]
 ];
 
@@ -54,7 +54,7 @@ const Map = ({ category, data, height }) => {
 
       fetch("./countries_indian_states.json")
         .then(response => response.json())
-        .then(features =>
+        .then(features => {
           setLayer(
             geoJSON(features, {
               color: "#555",
@@ -62,8 +62,10 @@ const Map = ({ category, data, height }) => {
               fillColor: noDataColor,
               fillOpacity: 0.75
             }).addTo(instance)
-          )
-        )
+          );
+
+          instance.invalidateSize();
+        })
         .catch(error => console.log(error));
     }
   }, [instance, setLayer]);
