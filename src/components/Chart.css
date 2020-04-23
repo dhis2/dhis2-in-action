@@ -1,9 +1,5 @@
 .Chart {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 42%;
+  height: 100%;
 }
 
 .Chart-hide {

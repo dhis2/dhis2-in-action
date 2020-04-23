@@ -1,0 +1,53 @@
+.List {
+  height: 100%;
+  font-size: 14px;
+  overflow-y: auto;
+}
+
+.List-hide {
+  display: none;
+}
+
+.List .container {
+  display: flex;
+  flex-wrap: nowrap;
+  padding: 0 5px 5px 5px;
+  overflow-y: auto;
+}
+
+.List .section {
+  border: 1px solid #eee;
+  margin: 5px;
+  min-width: 130px;
+  padding: 8px;
+}
+
+.List span {
+  display: inline-block;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  border: 1px solid #777;
+  vertical-align: baseline;
+  margin-right: 8px;
+  margin-bottom: -2px;
+}
+
+.List h2 {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0;
+  line-height: 20px;
+}
+
+.List ul {
+  padding: 0;
+  column-width: 110px;
+  column-fill: auto;
+  height: calc(100% - 45px);
+}
+
+.List li {
+  list-style-type: none;
+}

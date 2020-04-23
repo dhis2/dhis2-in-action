@@ -7,40 +7,40 @@ export const categories = [
     legend: [
       { code: "s", name: "National", color: "#238443" },
       { code: "i", name: "Indian State", color: "#78c679" },
-      { code: "p", name: "Pilot", color: "#d9f0a3" }
+      { code: "p", name: "Pilot", color: "#d9f0a3" },
     ],
-    showChart: true
+    hasChart: true,
   },
   {
     id: "covid-19",
     title: "COVID-19",
     legend: [
       { code: "c", name: "Operational", color: "#d95f0e" },
-      { code: "v", name: "In development", color: "#fec44f" }
+      { code: "v", name: "In development", color: "#fec44f" },
     ],
-    showChart: false
+    hasChart: false,
   },
   {
     id: "tracker",
     title: "Tracker",
     legend: [{ code: "t", name: "Tracker", color: "#e34a33" }],
-    showChart: true
+    hasChart: true,
   },
   {
     id: "android",
     title: "Android app",
     legend: [{ code: "a", name: "Android app", color: "#2ca25f" }],
-    showChart: true
+    hasChart: true,
   },
   {
     id: "emis",
     title: "Education Management Information System (EMIS)",
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#1d91c0" }],
-    showChart: false
-  }
+    hasChart: false,
+  },
 ];
 
-const parseData = data => {
+const parseData = (data) => {
   const rows = data.feed.entry;
   const row = rows[0];
   const years = [];
@@ -57,15 +57,15 @@ const parseData = data => {
   const countries = {};
   const year = {};
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     const id = row["gsx$code"]["$t"];
     const name = row["gsx$name"]["$t"];
 
     const country = (countries[id] = {
-      name: name
+      name: name,
     });
 
-    years.forEach(y => {
+    years.forEach((y) => {
       let letters = row["gsx$y" + y]["$t"];
 
       // Remove and fix in google spreadsheet
@@ -86,11 +86,11 @@ const parseData = data => {
             a: 0, // android
             e: 0, // education
             c: 0, // covid-19
-            v: 0 // covid-19 (development)
+            v: 0, // covid-19 (development)
           };
         }
 
-        letters.split("").forEach(value => {
+        letters.split("").forEach((value) => {
           year[y][value]++;
         });
       }
@@ -105,5 +105,5 @@ export const getData = () =>
     "//spreadsheets.google.com/feeds/list/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/1/public/values?alt=json-in-script",
     { jsonpCallback: "callback" }
   )
-    .then(response => response.json())
+    .then((response) => response.json())
     .then(parseData);

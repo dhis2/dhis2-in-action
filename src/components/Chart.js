@@ -12,24 +12,24 @@ const Chart = ({ category, data, show }) => {
       chart("chart", {
         chart: {
           type: "area",
-          marginTop: 20
+          marginTop: 4,
         },
         title: {
-          text: null // 'Countries using DHIS 2'
+          text: null, // 'Countries using DHIS 2'
         },
         xAxis: {
           tickmarkPlacement: "on",
           title: {
-            enabled: false
-          }
+            enabled: false,
+          },
         },
         yAxis: {
           title: {
-            text: "Countries using DHIS2"
-          }
+            text: "Countries using DHIS2",
+          },
         },
         tooltip: {
-          split: true
+          split: true,
         },
         plotOptions: {
           area: {
@@ -38,14 +38,14 @@ const Chart = ({ category, data, show }) => {
             lineWidth: 1,
             marker: {
               lineWidth: 1,
-              lineColor: "#666666"
-            }
-          }
+              lineColor: "#666666",
+            },
+          },
         },
         series: [],
         legend: {
-          enabled: false
-        }
+          enabled: false,
+        },
       })
     );
   }, [container]);
@@ -53,13 +53,13 @@ const Chart = ({ category, data, show }) => {
   useEffect(() => {
     if ((instance, category, data)) {
       const { series, xAxis, yAxis } = instance;
-      const { title, legend } = categories.find(c => c.id === category);
+      const { title, legend } = categories.find((c) => c.id === category);
       const { years, year } = data;
 
       instance.reflow();
 
       const yearRange = years.slice(
-        years.findIndex(y => legend.some(({ code }) => year[y][code]))
+        years.findIndex((y) => legend.some(({ code }) => year[y][code]))
       );
 
       while (series.length) {
@@ -75,12 +75,18 @@ const Chart = ({ category, data, show }) => {
         .forEach(({ code, name, color }) =>
           instance.addSeries({
             name: name,
-            data: yearRange.map(y => year[y][code]),
-            color: color
+            data: yearRange.map((y) => year[y][code]),
+            color: color,
           })
         );
     }
   }, [instance, category, data]);
+
+  useEffect(() => {
+    if (instance && show) {
+      instance.reflow();
+    }
+  }, [instance, show]);
 
   return (
     <div
