@@ -39,7 +39,7 @@ const List = ({ category, data, show }) => {
   const onResize = useCallback(() => {
     if (lists && container.current) {
       const { clientHeight } = container.current;
-      const count = Math.floor((clientHeight - marginTop - marginBottom) / 17);
+      const count = Math.floor((clientHeight - marginTop - marginBottom) / 20);
       const cols = lists.map(({ items }) => Math.ceil(items.length / count));
 
       setCols(cols);
