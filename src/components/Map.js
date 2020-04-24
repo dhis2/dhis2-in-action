@@ -10,10 +10,10 @@ const noDataColor = "#fff";
 
 const bounds = [
   [-40, -100],
-  [50, 165]
+  [50, 165],
 ];
 
-const Map = ({ category, data, height }) => {
+const Map = ({ category, data }) => {
   const [instance, setInstance] = useState();
   const [layer, setLayer] = useState();
   const container = useRef();
@@ -25,20 +25,13 @@ const Map = ({ category, data, height }) => {
           "ESRI:53009",
           "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs",
           {
-            resolutions: [50000, 40000, 30000, 20000, 10000, 5000, 2500, 1250]
+            resolutions: [50000, 40000, 30000, 20000, 10000, 5000, 2500, 1250],
           }
         ),
-        maxZoom: 7
+        maxZoom: 7,
       }).fitBounds(bounds)
     );
   }, [container]);
-
-  useEffect(() => {
-    if (instance) {
-      instance.invalidateSize();
-      instance.fitBounds(bounds);
-    }
-  }, [instance, height]);
 
   useEffect(() => {
     if (instance) {
@@ -48,40 +41,40 @@ const Map = ({ category, data, height }) => {
           opacity: 0,
           fillColor: "#edf7ff",
           fillOpacity: 1,
-          clickable: false
-        }
+          clickable: false,
+        },
       }).addTo(instance);
 
       fetch("./countries_indian_states.json")
-        .then(response => response.json())
-        .then(features => {
+        .then((response) => response.json())
+        .then((features) => {
           setLayer(
             geoJSON(features, {
               color: "#555",
               weight: 1,
               fillColor: noDataColor,
-              fillOpacity: 0.75
+              fillOpacity: 0.75,
             }).addTo(instance)
           );
 
           instance.invalidateSize();
         })
-        .catch(error => console.log(error));
+        .catch((error) => console.log(error));
     }
   }, [instance, setLayer]);
 
   useEffect(() => {
     if (layer && category && data) {
       const { countries, lastYear } = data;
-      const { legend } = categories.find(c => c.id === category);
+      const { legend } = categories.find((c) => c.id === category);
 
-      layer.eachLayer(item =>
+      layer.eachLayer((item) =>
         item.setStyle({
-          fillColor: noDataColor
+          fillColor: noDataColor,
         })
       );
 
-      layer.eachLayer(item => {
+      layer.eachLayer((item) => {
         const code = item.feature.properties.CODE;
 
         if (code && countries[code] && countries[code][lastYear]) {
@@ -100,7 +93,7 @@ const Map = ({ category, data, height }) => {
           legend.forEach(({ code, color }) => {
             if (letters.indexOf(code) !== -1) {
               item.setStyle({
-                fillColor: color
+                fillColor: color,
               });
             }
           });
@@ -117,13 +110,13 @@ const Map = ({ category, data, height }) => {
         }
 
         const items = legend
-          .map(i => ({
+          .map((i) => ({
             ...i,
             year: data.years.find(
-              y => country[y] && country[y].includes(i.code)
-            )
+              (y) => country[y] && country[y].includes(i.code)
+            ),
           }))
-          .filter(i => i.year);
+          .filter((i) => i.year);
 
         const content = items.map(
           ({ name, year }) =>
@@ -141,7 +134,7 @@ const Map = ({ category, data, height }) => {
     }
   }, [layer, category, data]);
 
-  return <div ref={container} className="Map" style={{ height }}></div>;
+  return <div ref={container} className="Map"></div>;
 };
 
 export default Map;
