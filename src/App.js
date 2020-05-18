@@ -3,7 +3,7 @@ import Fullscreen from "./components/Fullscreen";
 import Sidebar from "./components/Sidebar";
 import Map from "./components/Map";
 import ChartList from "./components/ChartList";
-import { categories, getData } from "./utils/data";
+import { categories, getData, getCountryFocusData } from "./utils/data";
 import "./App.css";
 
 const getInitialCategory = () => {
@@ -26,6 +26,8 @@ const App = () => {
 
   useEffect(() => {
     getData().then(setData);
+
+    getCountryFocusData().then(console.log);
   }, []);
 
   useEffect(() => {

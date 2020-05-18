@@ -100,6 +100,12 @@ const parseData = (data) => {
   return { countries, year, years, lastYear };
 };
 
+const parseCountryFocusData = (data) => {
+  console.log("parseCountryFocusData", data);
+
+  return data;
+};
+
 export const getData = () =>
   fetchJsonp(
     "//spreadsheets.google.com/feeds/list/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/1/public/values?alt=json-in-script",
@@ -107,3 +113,11 @@ export const getData = () =>
   )
     .then((response) => response.json())
     .then(parseData);
+
+export const getCountryFocusData = () =>
+  fetchJsonp(
+    "//spreadsheets.google.com/feeds/list/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/2/public/values?alt=json-in-script",
+    { jsonpCallback: "callback" }
+  )
+    .then((response) => response.json())
+    .then(parseCountryFocusData);
