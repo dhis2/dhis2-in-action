@@ -3,7 +3,7 @@ import Fullscreen from "./components/Fullscreen";
 import Sidebar from "./components/Sidebar";
 import Map from "./components/Map";
 import ChartList from "./components/ChartList";
-import { categories, getData, getCountryFocusData } from "./utils/data";
+import { categories, getData, getFocusData } from "./utils/data";
 import "./App.css";
 
 const getInitialCategory = () => {
@@ -23,12 +23,18 @@ const getInitialCategory = () => {
 const App = () => {
   const [category, setCategory] = useState(getInitialCategory());
   const [data, setData] = useState();
+  const [focus, setFocus] = useState();
 
   useEffect(() => {
     getData().then(setData);
-
-    getCountryFocusData().then(console.log);
   }, []);
+
+  // Load country focus after main data is loaded
+  useEffect(() => {
+    if (data) {
+      getFocusData().then(setFocus);
+    }
+  }, [data]);
 
   useEffect(() => {
     window.location.hash = `#${category}`;
@@ -37,8 +43,8 @@ const App = () => {
   return (
     <Fullscreen>
       <Sidebar category={category} data={data} onSelect={setCategory}>
-        <Map category={category} data={data} height={"58%"} />
-        <ChartList category={category} data={data} />
+        <Map category={category} data={data} focus={focus} height={"58%"} />
+        <ChartList category={category} data={data} focus={focus} />
       </Sidebar>
     </Fullscreen>
   );

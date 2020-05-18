@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { map, geoJSON } from "leaflet";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { map, geoJSON, popup } from "leaflet";
 import { CRS } from "proj4leaflet";
 import "leaflet/dist/leaflet.css";
 import Graticule from "../utils/graticule";
@@ -13,10 +13,63 @@ const bounds = [
   [50, 165],
 ];
 
-const Map = ({ category, data }) => {
+const Map = ({ category, data, focus }) => {
   const [instance, setInstance] = useState();
   const [layer, setLayer] = useState();
   const container = useRef();
+
+  const onClick = useCallback(
+    ({ latlng, layer }) => {
+      const { feature } = layer;
+      const { CODE, NAME } = feature.properties;
+      const country = data.countries[CODE];
+      let content = `<h2>${NAME}</h2>`;
+
+      if (country) {
+        const { legend } = categories.find((c) => c.id === category);
+        const countryFocus = focus[CODE];
+
+        const items = legend
+          .map((i) => ({
+            ...i,
+            year: data.years.find(
+              (y) => country[y] && country[y].includes(i.code)
+            ),
+          }))
+          .filter((i) => i.year);
+
+        content += items
+          .map(
+            ({ name, year }) =>
+              `${
+                name.includes("National")
+                  ? CODE.includes("-")
+                    ? "State"
+                    : "National"
+                  : name
+              }: ${year}`
+          )
+          .join("<br/>");
+
+        if (countryFocus) {
+          const letter = items
+            .map((i) => i.code)
+            .find((l) => !!countryFocus[l]);
+
+          if (letter) {
+            const { title, body, imageurl, imagelink } = countryFocus[letter];
+            content += `<h3>${title}</h3>${
+              imageurl ? `<img src="${imageurl}" width="100%" />` : ""
+            }${body}`;
+            console.log(countryFocus[letter]);
+          }
+        }
+      }
+
+      popup().setLatLng(latlng).setContent(content).openOn(instance);
+    },
+    [instance, category, data, focus]
+  );
 
   useEffect(() => {
     setInstance(
@@ -100,6 +153,7 @@ const Map = ({ category, data }) => {
         }
       });
 
+      /*
       layer.bindPopup(({ feature }) => {
         const { CODE, NAME } = feature.properties;
         const country = data.countries[CODE];
@@ -131,8 +185,20 @@ const Map = ({ category, data }) => {
 
         return `${name}${content.join("<br/>")}`;
       });
+      */
     }
   }, [layer, category, data]);
+
+  useEffect(() => {
+    if (layer) {
+      layer.on("click", onClick);
+    }
+    return () => {
+      if (layer) {
+        layer.off("click", onClick);
+      }
+    };
+  }, [layer, data, focus, onClick]);
 
   return <div ref={container} className="Map"></div>;
 };
