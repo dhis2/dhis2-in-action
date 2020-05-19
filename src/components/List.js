@@ -11,7 +11,7 @@ import "./List.css";
 const marginTop = 70;
 const marginBottom = 20;
 
-const List = ({ category, data, show, focus }) => {
+const List = ({ category, data, show, focus, onClick }) => {
   const container = useRef();
   const [cols, setCols] = useState(null);
 
@@ -95,7 +95,7 @@ const List = ({ category, data, show, focus }) => {
                   }}
                 >
                   {items.map((name) => (
-                    <li key={name}>
+                    <li key={name} onClick={() => onClick(name)}>
                       {name}
                       {focus.includes(name) ? (
                         <img src="icon-info-48.png" alt="More information" />

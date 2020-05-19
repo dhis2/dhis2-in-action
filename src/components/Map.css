@@ -43,6 +43,7 @@
 .leaflet-popup-content {
   margin: 8px 20px 8px 12px !important;
   line-height: 18px;
+  max-width: 90%;
 }
 
 .leaflet-popup-close-button {
@@ -52,4 +53,22 @@
 .leaflet-popup-content h2 {
   margin: 5px 0;
   font-size: 14px;
+}
+
+.leaflet-popup-content h3 {
+  margin: 5px 0;
+  font-size: 12px;
+}
+
+.leaflet-popup-content img {
+  display: block;
+  margin-top: 10px;
+}
+
+.leaflet-popup-content p {
+  margin: 8px 0;
+}
+
+.leaflet-popup-content a {
+  color: #000;
 }

@@ -53,6 +53,11 @@
 .List li {
   list-style-type: none;
   line-height: 22px;
+  cursor: pointer;
+}
+
+.List li:hover {
+  text-decoration: underline;
 }
 
 .List li img {

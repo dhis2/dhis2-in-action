@@ -20,7 +20,7 @@ const bounds = [
   [50, 165],
 ];
 
-const Map = ({ category, data, focus }) => {
+const Map = ({ category, data, focus, selected, onClick }) => {
   const [instance, setInstance] = useState();
   const [layer, setLayer] = useState();
   const container = useRef();
@@ -30,7 +30,7 @@ const Map = ({ category, data, focus }) => {
     [category]
   );
 
-  const onClick = useCallback(
+  const onFeatureClick = useCallback(
     ({ latlng, layer }) => {
       const { feature } = layer;
       const { CODE, NAME } = feature.properties;
@@ -49,18 +49,20 @@ const Map = ({ category, data, focus }) => {
           }))
           .filter((i) => i.year);
 
-        content += items
-          .map(
-            ({ name, year }) =>
-              `${
-                name.includes("National")
-                  ? CODE.includes("-")
-                    ? "State"
-                    : "National"
-                  : name
-              }: ${year}`
-          )
-          .join("<br/>");
+        if (!countryFocus) {
+          content += items
+            .map(
+              ({ name, year }) =>
+                `${
+                  name.includes("National")
+                    ? CODE.includes("-")
+                      ? "State"
+                      : "National"
+                    : name
+                }: ${year}`
+            )
+            .join("<br/>");
+        }
 
         if (countryFocus) {
           const letter = items
@@ -69,17 +71,24 @@ const Map = ({ category, data, focus }) => {
 
           if (letter) {
             const { title, body, imageurl, imagelink } = countryFocus[letter];
-            content += `<h3>${title}</h3>${
-              imageurl ? `<img src="${imageurl}" width="100%" />` : ""
-            }${body}`;
-            console.log(countryFocus[letter]);
+            content += `<h3>${title}</h3>${body}${
+              imageurl ? `<img src="${imageurl}" height="100px" />` : ""
+            }`;
+            content += '<p><a href="">Learn more</a></p>';
           }
         }
       }
 
-      popup().setLatLng(latlng).setContent(content).openOn(instance);
+      popup({
+        maxWidth: 260,
+      })
+        .setLatLng(latlng)
+        .setContent(content)
+        .openOn(instance);
+
+      onClick();
     },
-    [instance, legend, data, focus]
+    [instance, legend, data, focus, onClick]
   );
 
   useEffect(() => {
@@ -144,6 +153,9 @@ const Map = ({ category, data, focus }) => {
           const country = countries[code];
           const letters = country[lastYear];
 
+          // Use name from Google Spreadsheet
+          item.feature.properties.NAME = country.name;
+
           // India: show country or states
           if (code === "IN") {
             if (legend.some(({ code }) => letters.includes(code))) {
@@ -167,14 +179,14 @@ const Map = ({ category, data, focus }) => {
 
   useEffect(() => {
     if (layer) {
-      layer.on("click", onClick);
+      layer.on("click", onFeatureClick);
     }
     return () => {
       if (layer) {
-        layer.off("click", onClick);
+        layer.off("click", onFeatureClick);
       }
     };
-  }, [layer, data, focus, onClick]);
+  }, [layer, data, focus, onFeatureClick]);
 
   useEffect(() => {
     if (instance && layer && legend && focus) {
@@ -205,7 +217,7 @@ const Map = ({ category, data, focus }) => {
 
         infoLayer = geoJSON(features, {
           pointToLayer: (feature, latlng) => marker(latlng, markerOptions),
-        }).on("click", onClick);
+        }).on("click", onFeatureClick);
 
         onZoomEnd = () =>
           instance[instance.getZoom() > 2 ? "addLayer" : "removeLayer"](
@@ -219,13 +231,28 @@ const Map = ({ category, data, focus }) => {
         return () => {
           if (infoLayer) {
             instance.off("zoomend", onZoomEnd);
-            infoLayer.off("click", onClick);
+            infoLayer.off("click", onFeatureClick);
             instance.removeLayer(infoLayer);
           }
         };
       }
     }
-  }, [instance, layer, legend, focus, data, onClick]);
+  }, [instance, layer, legend, focus, data, onFeatureClick]);
+
+  useEffect(() => {
+    if (selected && layer) {
+      const selectedLayer = layer
+        .getLayers()
+        .find((l) => l.feature.properties.NAME === selected);
+
+      if (selectedLayer) {
+        onFeatureClick({
+          layer: selectedLayer,
+          latlng: getIconPosition(selectedLayer.feature.geometry).reverse(),
+        });
+      }
+    }
+  }, [selected, layer, onFeatureClick]);
 
   return <div ref={container} className="Map"></div>;
 };

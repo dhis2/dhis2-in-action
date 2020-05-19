@@ -24,6 +24,7 @@ const App = () => {
   const [category, setCategory] = useState(getInitialCategory());
   const [data, setData] = useState();
   const [focus, setFocus] = useState();
+  const [selected, setSelected] = useState();
 
   useEffect(() => {
     getData().then(setData);
@@ -38,13 +39,26 @@ const App = () => {
 
   useEffect(() => {
     window.location.hash = `#${category}`;
+    setSelected();
   }, [category]);
 
   return (
     <Fullscreen>
       <Sidebar category={category} data={data} onSelect={setCategory}>
-        <Map category={category} data={data} focus={focus} height={"58%"} />
-        <ChartList category={category} data={data} focus={focus} />
+        <Map
+          category={category}
+          data={data}
+          focus={focus}
+          selected={selected}
+          height={"58%"}
+          onClick={setSelected}
+        />
+        <ChartList
+          category={category}
+          data={data}
+          focus={focus}
+          onClick={setSelected}
+        />
       </Sidebar>
     </Fullscreen>
   );
