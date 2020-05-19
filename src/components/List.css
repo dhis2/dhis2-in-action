@@ -39,8 +39,8 @@
   display: inline-block;
   font-size: 14px;
   font-weight: bold;
-  margin: 0;
   line-height: 20px;
+  margin: 0 0 -2px 0;
 }
 
 .List ul {
@@ -52,7 +52,14 @@
 
 .List li {
   list-style-type: none;
-  margin-bottom: 5px;
+  line-height: 22px;
+}
+
+.List li img {
+  padding-left: 6px;
+  vertical-align: -23%;
+  width: 20px;
+  height: 20px;
 }
 
 /* Scrollbar width */

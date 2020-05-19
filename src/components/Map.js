@@ -179,6 +179,7 @@ const Map = ({ category, data, focus }) => {
   useEffect(() => {
     if (instance && layer && legend && focus) {
       let infoLayer;
+      let onZoomEnd;
 
       const features = layer
         .getLayers()
@@ -204,12 +205,20 @@ const Map = ({ category, data, focus }) => {
 
         infoLayer = geoJSON(features, {
           pointToLayer: (feature, latlng) => marker(latlng, markerOptions),
-        })
-          .addTo(instance)
-          .on("click", onClick);
+        }).on("click", onClick);
+
+        onZoomEnd = () =>
+          instance[instance.getZoom() > 2 ? "addLayer" : "removeLayer"](
+            infoLayer
+          );
+
+        instance.on("zoomend", onZoomEnd);
+
+        onZoomEnd();
 
         return () => {
           if (infoLayer) {
+            instance.off("zoomend", onZoomEnd);
             infoLayer.off("click", onClick);
             instance.removeLayer(infoLayer);
           }

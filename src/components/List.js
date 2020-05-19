@@ -11,7 +11,7 @@ import "./List.css";
 const marginTop = 70;
 const marginBottom = 20;
 
-const List = ({ category, data, show }) => {
+const List = ({ category, data, show, focus }) => {
   const container = useRef();
   const [cols, setCols] = useState(null);
 
@@ -32,9 +32,19 @@ const List = ({ category, data, show }) => {
           }, [])
           .map((c) => c.name)
           .sort(),
+        focus: (focus
+          ? Object.keys(countries).filter((id) => {
+              const letters = countries[id][lastYear] || "";
+              return (
+                focus[id] &&
+                Object.keys(focus[id]).some((l) => letters.indexOf(l) !== -1)
+              );
+            })
+          : []
+        ).map((id) => countries[id].name),
       }));
     }
-  }, [category, data]);
+  }, [category, data, focus]);
 
   const onResize = useCallback(() => {
     if (lists && container.current) {
@@ -63,7 +73,7 @@ const List = ({ category, data, show }) => {
       <div className="container">
         {cols &&
           lists &&
-          lists.map(({ name, color, items }, index) => {
+          lists.map(({ name, color, items, focus }, index) => {
             const numCols = cols[index];
 
             return (
@@ -85,7 +95,14 @@ const List = ({ category, data, show }) => {
                   }}
                 >
                   {items.map((name) => (
-                    <li key={name}>{name}</li>
+                    <li key={name}>
+                      {name}
+                      {focus.includes(name) ? (
+                        <img src="icon-info-48.png" alt="More information" />
+                      ) : (
+                        ""
+                      )}
+                    </li>
                   ))}
                 </ul>
               </div>

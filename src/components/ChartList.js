@@ -4,7 +4,7 @@ import List from "./List";
 import { categories } from "../utils/data";
 import "./ChartList.css";
 
-const ChartListToggle = ({ category, data }) => {
+const ChartListToggle = ({ category, data, focus }) => {
   const [showChart, setShowChart] = useState(true);
   const { hasChart } = categories.find((c) => c.id === category);
 
@@ -21,7 +21,12 @@ const ChartListToggle = ({ category, data }) => {
       </div>
       <div className="wrapper" style={{ top: hasChart ? 30 : 5 }}>
         <Chart category={category} data={data} show={hasChart && showChart} />
-        <List category={category} data={data} show={!showChart || !hasChart} />
+        <List
+          category={category}
+          data={data}
+          show={!showChart || !hasChart}
+          focus={focus}
+        />
       </div>
     </div>
   );
