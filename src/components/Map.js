@@ -1,9 +1,16 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { map, geoJSON, popup } from "leaflet";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
+import { map, geoJSON, marker, icon, popup } from "leaflet";
 import { CRS } from "proj4leaflet";
 import "leaflet/dist/leaflet.css";
 import Graticule from "../utils/graticule";
 import { categories } from "../utils/data";
+import { getIconPosition } from "../utils/map";
 import "./Map.css";
 
 const noDataColor = "#fff";
@@ -18,6 +25,11 @@ const Map = ({ category, data, focus }) => {
   const [layer, setLayer] = useState();
   const container = useRef();
 
+  const legend = useMemo(
+    () => categories.find((c) => c.id === category).legend,
+    [category]
+  );
+
   const onClick = useCallback(
     ({ latlng, layer }) => {
       const { feature } = layer;
@@ -26,7 +38,6 @@ const Map = ({ category, data, focus }) => {
       let content = `<h2>${NAME}</h2>`;
 
       if (country) {
-        const { legend } = categories.find((c) => c.id === category);
         const countryFocus = focus[CODE];
 
         const items = legend
@@ -68,7 +79,7 @@ const Map = ({ category, data, focus }) => {
 
       popup().setLatLng(latlng).setContent(content).openOn(instance);
     },
-    [instance, category, data, focus]
+    [instance, legend, data, focus]
   );
 
   useEffect(() => {
@@ -117,9 +128,8 @@ const Map = ({ category, data, focus }) => {
   }, [instance, setLayer]);
 
   useEffect(() => {
-    if (layer && category && data) {
+    if (layer && legend && data) {
       const { countries, lastYear } = data;
-      const { legend } = categories.find((c) => c.id === category);
 
       layer.eachLayer((item) =>
         item.setStyle({
@@ -152,42 +162,8 @@ const Map = ({ category, data, focus }) => {
           });
         }
       });
-
-      /*
-      layer.bindPopup(({ feature }) => {
-        const { CODE, NAME } = feature.properties;
-        const country = data.countries[CODE];
-        const name = `<h2>${NAME}</h2>`;
-
-        if (!country) {
-          return name;
-        }
-
-        const items = legend
-          .map((i) => ({
-            ...i,
-            year: data.years.find(
-              (y) => country[y] && country[y].includes(i.code)
-            ),
-          }))
-          .filter((i) => i.year);
-
-        const content = items.map(
-          ({ name, year }) =>
-            `${
-              name.includes("National")
-                ? CODE.includes("-")
-                  ? "State"
-                  : "National"
-                : name
-            }: ${year}`
-        );
-
-        return `${name}${content.join("<br/>")}`;
-      });
-      */
     }
-  }, [layer, category, data]);
+  }, [layer, legend, data]);
 
   useEffect(() => {
     if (layer) {
@@ -199,6 +175,48 @@ const Map = ({ category, data, focus }) => {
       }
     };
   }, [layer, data, focus, onClick]);
+
+  useEffect(() => {
+    if (instance && layer && legend && focus) {
+      let infoLayer;
+
+      const features = layer
+        .getLayers()
+        .filter(({ feature }) => {
+          const code = feature.properties.CODE;
+          return focus[code] && legend.some((l) => focus[code][l.code]);
+        })
+        .map(({ feature }) => ({
+          ...feature,
+          geometry: {
+            type: "Point",
+            coordinates: getIconPosition(feature.geometry),
+          },
+        }));
+
+      if (features.length) {
+        const markerOptions = {
+          icon: icon({
+            iconUrl: "icon-info-48.png",
+            iconSize: [20, 20],
+          }),
+        };
+
+        infoLayer = geoJSON(features, {
+          pointToLayer: (feature, latlng) => marker(latlng, markerOptions),
+        })
+          .addTo(instance)
+          .on("click", onClick);
+
+        return () => {
+          if (infoLayer) {
+            infoLayer.off("click", onClick);
+            instance.removeLayer(infoLayer);
+          }
+        };
+      }
+    }
+  }, [instance, layer, legend, focus, data, onClick]);
 
   return <div ref={container} className="Map"></div>;
 };
