@@ -70,11 +70,35 @@ const Map = ({ category, data, focus, selected, onClick }) => {
             .find((l) => !!countryFocus[l]);
 
           if (letter) {
-            const { title, body, imageurl, imagelink } = countryFocus[letter];
-            content += `<h3>${title}</h3>${body}${
-              imageurl ? `<img src="${imageurl}" height="100px" />` : ""
-            }`;
-            content += '<p><a href="">Learn more</a></p>';
+            const {
+              title,
+              body,
+              imageurl,
+              imagelink,
+              videourl,
+              readmorelink,
+            } = countryFocus[letter];
+
+            content += `<h3>${title}</h3>${body}`;
+
+            if (videourl) {
+              content +=
+                '<iframe width="260" height="146" src="https://www.youtube.com/embed/hynRGQCvIo8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+            } else if (imageurl) {
+              content += `${
+                imageurl
+                  ? `${
+                      imagelink ? `<a href="${imagelink}">` : ""
+                    }<img src="${imageurl}" height="100px" />${
+                      imagelink ? `</a>` : ""
+                    }`
+                  : ""
+              }`;
+            }
+
+            if (readmorelink) {
+              content += `<p><a href="${readmorelink}">Learn more</a></p>`;
+            }
           }
         }
       }
@@ -220,17 +244,17 @@ const Map = ({ category, data, focus, selected, onClick }) => {
         }).on("click", onFeatureClick);
 
         onZoomEnd = () =>
-          instance[instance.getZoom() > 2 ? "addLayer" : "removeLayer"](
+          instance[instance.getZoom() > 1 ? "addLayer" : "removeLayer"](
             infoLayer
           );
 
-        instance.on("zoomend", onZoomEnd);
+        // instance.on("zoomend", onZoomEnd);
 
         onZoomEnd();
 
         return () => {
           if (infoLayer) {
-            instance.off("zoomend", onZoomEnd);
+            // instance.off("zoomend", onZoomEnd);
             infoLayer.off("click", onFeatureClick);
             instance.removeLayer(infoLayer);
           }

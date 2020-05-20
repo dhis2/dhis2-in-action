@@ -15,9 +15,13 @@ const List = ({ category, data, show, focus, onClick }) => {
   const container = useRef();
   const [cols, setCols] = useState(null);
 
+  const legend = useMemo(
+    () => categories.find((c) => c.id === category).legend,
+    [category]
+  );
+
   const lists = useMemo(() => {
-    if (category && data) {
-      const { legend } = categories.find((c) => c.id === category);
+    if (legend && data) {
       const { countries, lastYear } = data;
 
       setCols(null);
@@ -33,18 +37,12 @@ const List = ({ category, data, show, focus, onClick }) => {
           .map((c) => c.name)
           .sort(),
         focus: (focus
-          ? Object.keys(countries).filter((id) => {
-              const letters = countries[id][lastYear] || "";
-              return (
-                focus[id] &&
-                Object.keys(focus[id]).some((l) => letters.indexOf(l) !== -1)
-              );
-            })
+          ? Object.keys(countries).filter((id) => focus[id] && focus[id][code])
           : []
         ).map((id) => countries[id].name),
       }));
     }
-  }, [category, data, focus]);
+  }, [legend, data, focus]);
 
   const onResize = useCallback(() => {
     if (lists && container.current) {

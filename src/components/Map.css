@@ -72,3 +72,8 @@
 .leaflet-popup-content a {
   color: #000;
 }
+
+.leaflet-popup-content iframe {
+  margin-top: 10px;
+  outline: 1px solid #ccc;
+}

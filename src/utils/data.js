@@ -114,13 +114,22 @@ const parseFocusData = (data) => {
     const title = getCol(row, "title");
     const body = getCol(row, "body");
     const imageurl = getCol(row, "imageurl");
-    const imagelink = getCol(row, "imagehyperlink");
+    const imagelink = getCol(row, "imagelink");
+    const videourl = getCol(row, "videourl");
+    const readmorelink = getCol(row, "readmorelink");
 
     if (!byCountry[id]) {
       byCountry[id] = {};
     }
 
-    byCountry[id][letter] = { title, body, imageurl, imagelink };
+    byCountry[id][letter] = {
+      title,
+      body,
+      imageurl,
+      imagelink,
+      videourl,
+      readmorelink,
+    };
   });
 
   return byCountry;
