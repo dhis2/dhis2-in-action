@@ -11,6 +11,7 @@ import "leaflet/dist/leaflet.css";
 import Graticule from "../utils/graticule";
 import { categories } from "../utils/data";
 import { getIconPosition } from "../utils/map";
+import { getPopupContent } from "../utils/popup";
 import "./Map.css";
 
 const noDataColor = "#fff";
@@ -32,87 +33,35 @@ const Map = ({ category, data, focus, selected, onClick }) => {
 
   const onFeatureClick = useCallback(
     ({ latlng, layer }) => {
-      const { feature } = layer;
-      const { CODE, NAME } = feature.properties;
-      const country = data.countries[CODE];
-      let content = `<h2>${NAME}</h2>`;
+      const content = getPopupContent(layer.feature, data, focus, legend);
+      const { clientWidth, clientHeight } = container.current;
 
-      if (country) {
-        const countryFocus = focus[CODE];
+      console.log("container", clientWidth, clientHeight, container.current);
 
-        const items = legend
-          .map((i) => ({
-            ...i,
-            year: data.years.find(
-              (y) => country[y] && country[y].includes(i.code)
-            ),
-          }))
-          .filter((i) => i.year);
-
-        if (!countryFocus) {
-          content += items
-            .map(
-              ({ name, year }) =>
-                `${
-                  name.includes("National")
-                    ? CODE.includes("-")
-                      ? "State"
-                      : "National"
-                    : name
-                }: ${year}`
-            )
-            .join("<br/>");
-        }
-
-        if (countryFocus) {
-          const letter = items
-            .map((i) => i.code)
-            .find((l) => !!countryFocus[l]);
-
-          if (letter) {
-            const {
-              title,
-              body,
-              imageurl,
-              imagelink,
-              videourl,
-              readmorelink,
-            } = countryFocus[letter];
-
-            content += `<h3>${title}</h3>${body}`;
-
-            if (videourl) {
-              content +=
-                '<iframe width="260" height="146" src="https://www.youtube.com/embed/hynRGQCvIo8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
-            } else if (imageurl) {
-              content += `${
-                imageurl
-                  ? `${
-                      imagelink ? `<a href="${imagelink}">` : ""
-                    }<img src="${imageurl}" height="100px" />${
-                      imagelink ? `</a>` : ""
-                    }`
-                  : ""
-              }`;
-            }
-
-            if (readmorelink) {
-              content += `<p><a href="${readmorelink}">Learn more</a></p>`;
-            }
-          }
-        }
-      }
+      const maxWidth = clientWidth < 400 ? clientWidth - 100 : 300;
+      const maxHeight = clientHeight - 100;
 
       popup({
-        maxWidth: 260,
+        maxWidth,
+        maxHeight,
       })
         .setLatLng(latlng)
         .setContent(content)
         .openOn(instance);
 
-      onClick();
+      onClick(); // Clear previously clicked country
     },
-    [instance, legend, data, focus, onClick]
+    [instance, container, legend, data, focus, onClick]
+  );
+
+  const onPopupOpen = useCallback(
+    () => document.body.classList.add("popupopen"),
+    []
+  );
+
+  const onPopupClose = useCallback(
+    () => document.body.classList.remove("popupopen"),
+    []
   );
 
   useEffect(() => {
@@ -215,7 +164,6 @@ const Map = ({ category, data, focus, selected, onClick }) => {
   useEffect(() => {
     if (instance && layer && legend && focus) {
       let infoLayer;
-      let onZoomEnd;
 
       const features = layer
         .getLayers()
@@ -243,18 +191,10 @@ const Map = ({ category, data, focus, selected, onClick }) => {
           pointToLayer: (feature, latlng) => marker(latlng, markerOptions),
         }).on("click", onFeatureClick);
 
-        onZoomEnd = () =>
-          instance[instance.getZoom() > 1 ? "addLayer" : "removeLayer"](
-            infoLayer
-          );
-
-        // instance.on("zoomend", onZoomEnd);
-
-        onZoomEnd();
+        instance.addLayer(infoLayer);
 
         return () => {
           if (infoLayer) {
-            // instance.off("zoomend", onZoomEnd);
             infoLayer.off("click", onFeatureClick);
             instance.removeLayer(infoLayer);
           }
@@ -277,6 +217,20 @@ const Map = ({ category, data, focus, selected, onClick }) => {
       }
     }
   }, [selected, layer, onFeatureClick]);
+
+  useEffect(() => {
+    if (instance) {
+      instance.on("popupopen", onPopupOpen);
+      instance.on("popupclose", onPopupClose);
+    }
+
+    return () => {
+      if (instance) {
+        instance.off("popupopen", onPopupOpen);
+        instance.off("popupclose", onPopupClose);
+      }
+    };
+  }, [instance, onPopupOpen, onPopupClose]);
 
   return <div ref={container} className="Map"></div>;
 };

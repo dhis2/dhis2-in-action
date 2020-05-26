@@ -50,7 +50,6 @@ const App = () => {
           data={data}
           focus={focus}
           selected={selected}
-          height={"58%"}
           onClick={setSelected}
         />
         <ChartList

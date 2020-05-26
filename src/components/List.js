@@ -83,8 +83,8 @@ const List = ({ category, data, show, focus, onClick }) => {
                   flexShrink: numCols,
                 }}
               >
-                <span style={{ backgroundColor: color }}></span>
                 <h2>
+                  <span style={{ backgroundColor: color }}></span>
                   {name}: {items.length}
                 </h2>
                 <ul
