@@ -35,15 +35,14 @@ export const getPopupContent = (feature, data, focus, legend) => {
           body,
           imageurl,
           imagelink,
-          videourl,
+          youtubeid,
           readmorelink,
         } = countryFocus[letter];
 
         content += `<h3>${title}</h3>${body}`;
 
-        if (videourl) {
-          content +=
-            '<div class="aspect-ratio"><iframe src="https://www.youtube.com/embed/hynRGQCvIo8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>';
+        if (youtubeid) {
+          content += `<div class="aspect-ratio"><iframe src="https://www.youtube.com/embed/${youtubeid}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
         } else if (imageurl) {
           content += `${
             imageurl

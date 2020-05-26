@@ -115,7 +115,7 @@ const parseFocusData = (data) => {
     const body = getCol(row, "body");
     const imageurl = getCol(row, "imageurl");
     const imagelink = getCol(row, "imagelink");
-    const videourl = getCol(row, "videourl");
+    const youtubeid = getCol(row, "youtubeid");
     const readmorelink = getCol(row, "readmorelink");
 
     if (!byCountry[id]) {
@@ -127,7 +127,7 @@ const parseFocusData = (data) => {
       body,
       imageurl,
       imagelink,
-      videourl,
+      youtubeid,
       readmorelink,
     };
   });
