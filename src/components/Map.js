@@ -35,9 +35,6 @@ const Map = ({ category, data, focus, selected, onClick }) => {
     ({ latlng, layer }) => {
       const content = getPopupContent(layer.feature, data, focus, legend);
       const { clientWidth, clientHeight } = container.current;
-
-      console.log("container", clientWidth, clientHeight, container.current);
-
       const maxWidth = clientWidth < 400 ? clientWidth - 100 : 300;
       const maxHeight = clientHeight - 100;
 
