@@ -38,7 +38,15 @@ export const categories = [
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#1d91c0" }],
     hasChart: false,
   },
+  {
+    id: "who",
+    title: "WHO Packages",
+    legend: [{ code: "w", name: "WHO Packages", color: "#ae017e" }],
+    hasChart: false,
+  },
 ];
+
+const allLetters = categories.flatMap(c => c.legend).reduce((obj, {code}) => ({...obj, [code]: 0}), {});
 
 const getCol = (row, name) => row[`gsx$${name}`]["$t"];
 
@@ -81,16 +89,7 @@ const parseData = (data) => {
           country[y] = letters;
 
           if (!year[y]) {
-            year[y] = {
-              p: 0, // pilot
-              s: 0, // national scale
-              i: 0, // indian state
-              t: 0, // tracker
-              a: 0, // android
-              e: 0, // education
-              c: 0, // covid-19
-              v: 0, // covid-19 (development)
-            };
+            year[y] = { ...allLetters };
           }
 
           letters.split("").forEach((value) => {
