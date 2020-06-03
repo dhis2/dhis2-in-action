@@ -33,17 +33,18 @@ export const categories = [
     hasChart: true,
   },
   {
-    id: "emis",
-    title: "Education Management Information System (EMIS)",
-    legend: [{ code: "e", name: "DHIS2 for Education", color: "#1d91c0" }],
+    id: "who",
+    title: "WHO Packages",
+    legend: [{ code: "w", name: "WHO Packages", color: "#1d91c0" }],
     hasChart: false,
   },
   {
-    id: "who",
-    title: "WHO Packages",
-    legend: [{ code: "w", name: "WHO Packages", color: "#ae017e" }],
+    id: "emis",
+    title: "Education Management Information System (EMIS)",
+    legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
     hasChart: false,
   },
+
 ];
 
 const allLetters = categories.flatMap(c => c.legend).reduce((obj, {code}) => ({...obj, [code]: 0}), {});
