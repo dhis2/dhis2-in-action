@@ -44,10 +44,11 @@ export const categories = [
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
     hasChart: false,
   },
-
 ];
 
-const allLetters = categories.flatMap(c => c.legend).reduce((obj, {code}) => ({...obj, [code]: 0}), {});
+const allLetters = categories
+  .flatMap((c) => c.legend)
+  .reduce((obj, { code }) => ({ ...obj, [code]: 0 }), {});
 
 const getCol = (row, name) => row[`gsx$${name}`]["$t"];
 
