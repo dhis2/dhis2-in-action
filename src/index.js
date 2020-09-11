@@ -11,10 +11,10 @@ import "core-js/features/object/values"; // IE 11 support
 import "core-js/features/promise"; // IE 11 support
 import "unfetch/polyfill"; // IE 11 support
 import "./index.css";
-import App from "./App";
+import Root from "./Root";
 import * as serviceWorker from "./serviceWorker";
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.render(<Root />, document.getElementById("root"));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

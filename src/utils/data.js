@@ -46,9 +46,52 @@ export const categories = [
   },
 ];
 
+export const whoPackages = [
+  {
+    code: "q",
+    name: "Data Quality",
+    color: "#2ca25f",
+  },
+  {
+    code: "i",
+    name: "Immunization",
+    color: "#2ca25f",
+  },
+  {
+    code: "h",
+    name: "HIV",
+    color: "#2ca25f",
+  },
+  {
+    code: "m",
+    name: "Malaria",
+    color: "#2ca25f",
+  },
+  {
+    code: "b",
+    name: "TB",
+    color: "#2ca25f",
+  },
+  {
+    code: "x",
+    name: "VPD Surveillance",
+    color: "#2ca25f",
+  },
+  {
+    code: "d",
+    name: "Cause of Death",
+    color: "#2ca25f",
+  },
+];
+
 const allLetters = categories
   .flatMap((c) => c.legend)
   .reduce((obj, { code }) => ({ ...obj, [code]: 0 }), {});
+
+const whoLetters = whoPackages.reduce(
+  (obj, { code }) => ({ ...obj, [code]: 0 }),
+  {}
+);
 
 const getCol = (row, name) => row[`gsx$${name}`]["$t"];
 
@@ -68,14 +111,17 @@ const parseData = (data) => {
   const lastYear = years[years.length - 1];
   const countries = {};
   const year = {};
+  const whoCount = { total: 0, ...whoLetters };
 
   rows.forEach((row) => {
     const id = getCol(row, "code");
     const name = getCol(row, "name");
+    const who = getCol(row, "who");
 
     if (id) {
       const country = (countries[id] = {
-        name: name,
+        name,
+        who,
       });
 
       years.forEach((y) => {
@@ -94,15 +140,18 @@ const parseData = (data) => {
             year[y] = { ...allLetters };
           }
 
-          letters.split("").forEach((value) => {
-            year[y][value]++;
-          });
+          letters.split("").forEach((code) => year[y][code]++);
         }
       });
+
+      if (who.length) {
+        whoCount.total++;
+        who.split("").forEach((code) => whoCount[code]++);
+      }
     }
   });
 
-  return { countries, year, years, lastYear };
+  return { countries, year, years, lastYear, whoCount };
 };
 
 const parseFocusData = (data) => {
