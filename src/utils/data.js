@@ -12,7 +12,7 @@ export const categories = [
     hasChart: true,
   },
   {
-    id: "covid-19-surveillance",
+    id: "covid-19",
     title: "COVID-19 Surveillance",
     legend: [
       { code: "c", name: "Operational", color: "#d95f0e" },
