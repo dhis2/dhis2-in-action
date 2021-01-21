@@ -12,11 +12,20 @@ export const categories = [
     hasChart: true,
   },
   {
-    id: "covid-19",
-    title: "COVID-19",
+    id: "covid-19-surveillance",
+    title: "COVID-19 Surveillance",
     legend: [
       { code: "c", name: "Operational", color: "#d95f0e" },
       { code: "v", name: "In development", color: "#fec44f" },
+    ],
+    hasChart: false,
+  },
+  {
+    id: "covid-19-vaccine",
+    title: "COVID-19 Vaccine",
+    legend: [
+      { code: "x", name: "Operational", color: "#d95f0e" },
+      { code: "z", name: "In development", color: "#fec44f" },
     ],
     hasChart: false,
   },
