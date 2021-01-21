@@ -24,8 +24,8 @@ export const categories = [
     id: "covid-19-vaccine",
     title: "COVID-19 Vaccine",
     legend: [
-      { code: "x", name: "Operational", color: "#d95f0e" },
-      { code: "z", name: "In development", color: "#fec44f" },
+      { code: "x", name: "Operational", color: "#7D2BA2" },
+      { code: "z", name: "In development", color: "#D098EB" },
     ],
     hasChart: false,
   },
