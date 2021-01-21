@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "6af46ab03b3f359ca5104cab46e33462",
+    "revision": "a5aa6380b9eab9f869e25f39efd18cc1",
     "url": "/dhis2-in-action/index.html"
   },
   {
@@ -8,8 +8,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/dhis2-in-action/static/css/2.7c35e809.chunk.css"
   },
   {
-    "revision": "7c6cc1fa8c8248ae6204",
-    "url": "/dhis2-in-action/static/css/main.ca72bda2.chunk.css"
+    "revision": "6379fd3c483c28e776e4",
+    "url": "/dhis2-in-action/static/css/main.6e32c586.chunk.css"
   },
   {
     "revision": "deeb246bca54614b9464",
@@ -20,8 +20,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/dhis2-in-action/static/js/2.76617fec.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "7c6cc1fa8c8248ae6204",
-    "url": "/dhis2-in-action/static/js/main.7b3ef344.chunk.js"
+    "revision": "6379fd3c483c28e776e4",
+    "url": "/dhis2-in-action/static/js/main.0230cb7f.chunk.js"
   },
   {
     "revision": "b02c7b1c94330995b5f3",
