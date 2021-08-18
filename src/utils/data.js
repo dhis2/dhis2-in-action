@@ -59,53 +59,54 @@ const allLetters = categories
   .flatMap((c) => c.legend)
   .reduce((obj, { code }) => ({ ...obj, [code]: 0 }), {});
 
-const getCol = (row, name) => row[`gsx$${name}`]["$t"];
+const isYear = /^Y\d{4}$/;
 
-const parseData = (data) => {
-  const rows = data.feed.entry;
-  const row = rows[0];
-  const years = [];
-
-  for (let col in row) {
-    if (row.hasOwnProperty(col)) {
-      if (col.slice(0, 5) === "gsx$y") {
-        years.push(col.slice(-4));
-      }
-    }
-  }
-
+const parseData = ({ values }) => {
+  const cols = values[0];
+  const idx = cols.indexOf("Code");
+  const namex = cols.indexOf("Name");
+  const years = cols.filter((c) => c.match(isYear)).map((c) => c.substring(1));
   const lastYear = years[years.length - 1];
+  const rows = values.slice(1);
   const countries = {};
   const year = {};
+  let skip = false;
 
   rows.forEach((row) => {
-    const id = getCol(row, "code");
-    const name = getCol(row, "name");
+    const id = row[idx];
+    const name = row[namex];
 
-    if (id) {
+    // Loop until first empty id
+    if (!id) {
+      skip = true;
+    }
+
+    if (id && !skip) {
       const country = (countries[id] = {
         name: name,
       });
 
       years.forEach((y) => {
-        let letters = getCol(row, `y${y}`);
+        let letters = row[cols.indexOf(`Y${y}`)];
 
-        // Remove and fix in google spreadsheet
-        if (id.startsWith("IN-")) {
-          // s/p is not valid for indian states
-          letters = letters.replace("s", "").replace("p", "");
-        }
-
-        if (letters.length) {
-          country[y] = letters;
-
-          if (!year[y]) {
-            year[y] = { ...allLetters };
+        if (letters) {
+          // Remove and fix in google spreadsheet
+          if (id.startsWith("IN-")) {
+            // s/p is not valid for indian states
+            letters = letters.replace("s", "").replace("p", "");
           }
 
-          letters.split("").forEach((value) => {
-            year[y][value]++;
-          });
+          if (letters.length) {
+            country[y] = letters;
+
+            if (!year[y]) {
+              year[y] = { ...allLetters };
+            }
+
+            letters.split("").forEach((value) => {
+              year[y][value]++;
+            });
+          }
         }
       });
     }
@@ -114,19 +115,28 @@ const parseData = (data) => {
   return { countries, year, years, lastYear };
 };
 
-const parseFocusData = (data) => {
-  const rows = data.feed.entry;
+const parseFocusData = ({ values }) => {
+  const cols = values[0];
+  const rows = values.slice(1);
+  const idx = cols.indexOf("Country code");
+  const letterx = cols.indexOf("Letter");
+  const titlex = cols.indexOf("Title");
+  const bodyx = cols.indexOf("Body");
+  const imageurlx = cols.indexOf("Image url");
+  const imagelinkx = cols.indexOf("Image link");
+  const youtubeidx = cols.indexOf("YouTube ID");
+  const readmorelinkx = cols.indexOf("Read more link");
   const byCountry = {};
 
   rows.forEach((row) => {
-    const id = getCol(row, "countrycode");
-    const letter = getCol(row, "letter");
-    const title = getCol(row, "title");
-    const body = getCol(row, "body");
-    const imageurl = getCol(row, "imageurl");
-    const imagelink = getCol(row, "imagelink");
-    const youtubeid = getCol(row, "youtubeid");
-    const readmorelink = getCol(row, "readmorelink");
+    const id = row[idx];
+    const letter = row[letterx];
+    const title = row[titlex];
+    const body = row[bodyx];
+    const imageurl = row[imageurlx];
+    const imagelink = row[imagelinkx];
+    const youtubeid = row[youtubeidx];
+    const readmorelink = row[readmorelinkx];
 
     if (!byCountry[id]) {
       byCountry[id] = {};
@@ -147,10 +157,13 @@ const parseFocusData = (data) => {
 
 const fetchData = (sheet) =>
   fetchJsonp(
-    `//spreadsheets.google.com/feeds/list/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/${sheet}/public/values?alt=json-in-script`,
+    // `//spreadsheets.google.com/feeds/list/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/${sheet}/public/values?alt=json-in-script`,
+    `https://sheets.googleapis.com/v4/spreadsheets/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
     { jsonpCallback: "callback" }
   ).then((response) => response.json());
 
-export const getData = () => fetchData(1).then(parseData);
+export const getData = () =>
+  fetchData("Country status per year").then(parseData);
 
-export const getFocusData = () => fetchData(2).then(parseFocusData);
+export const getFocusData = () =>
+  fetchData("Country focus").then(parseFocusData);
