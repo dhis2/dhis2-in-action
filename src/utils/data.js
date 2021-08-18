@@ -157,7 +157,6 @@ const parseFocusData = ({ values }) => {
 
 const fetchData = (sheet) =>
   fetchJsonp(
-    // `//spreadsheets.google.com/feeds/list/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/${sheet}/public/values?alt=json-in-script`,
     `https://sheets.googleapis.com/v4/spreadsheets/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
     { jsonpCallback: "callback" }
   ).then((response) => response.json());
