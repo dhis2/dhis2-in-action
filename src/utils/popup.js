@@ -13,7 +13,31 @@ export const getPopupContent = (feature, data, focus, legend) => {
       }))
       .filter((i) => i.year);
 
-    if (!countryFocus) {
+    const letter =
+      countryFocus && items.map((i) => i.code).find((l) => !!countryFocus[l]);
+
+    if (letter) {
+      const { title, body, imageurl, imagelink, youtubeid, readmorelink } =
+        countryFocus[letter];
+
+      content += `<h3>${title}</h3>${body}`;
+
+      if (youtubeid) {
+        content += `<div class="aspect-ratio"><iframe src="https://www.youtube.com/embed/${youtubeid}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+      } else if (imageurl) {
+        content += `${
+          imageurl
+            ? `${
+                imagelink ? `<a href="${imagelink}" target="_blank">` : ""
+              }<img src="${imageurl}" />${imagelink ? `</a>` : ""}`
+            : ""
+        }`;
+      }
+
+      if (readmorelink) {
+        content += `<p><a href="${readmorelink}" target="_blank">Learn more</a></p>`;
+      }
+    } else {
       content += items
         .map(
           ({ name, year }) =>
@@ -26,37 +50,6 @@ export const getPopupContent = (feature, data, focus, legend) => {
             }: ${year}`
         )
         .join("<br/>");
-    } else {
-      const letter = items.map((i) => i.code).find((l) => !!countryFocus[l]);
-
-      if (letter) {
-        const {
-          title,
-          body,
-          imageurl,
-          imagelink,
-          youtubeid,
-          readmorelink,
-        } = countryFocus[letter];
-
-        content += `<h3>${title}</h3>${body}`;
-
-        if (youtubeid) {
-          content += `<div class="aspect-ratio"><iframe src="https://www.youtube.com/embed/${youtubeid}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
-        } else if (imageurl) {
-          content += `${
-            imageurl
-              ? `${
-                  imagelink ? `<a href="${imagelink}" target="_blank">` : ""
-                }<img src="${imageurl}" />${imagelink ? `</a>` : ""}`
-              : ""
-          }`;
-        }
-
-        if (readmorelink) {
-          content += `<p><a href="${readmorelink}" target="_blank">Learn more</a></p>`;
-        }
-      }
     }
   }
 
