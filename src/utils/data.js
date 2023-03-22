@@ -3,14 +3,39 @@ import fetchJsonp from "fetch-jsonp";
 export const categories = [
   {
     id: "health",
-    title: "Health Information System",
+    title: "Health",
     legend: [
       { code: "s", name: "National", color: "#238443" },
-      { code: "i", name: "Indian State", color: "#78c679" },
-      { code: "p", name: "Pilot", color: "#d9f0a3" },
+      { code: "p", name: "Subnational", color: "#d9f0a3" },
     ],
     hasChart: true,
+    isVisible: true,
   },
+  {
+    id: "disease",
+    title: "Disease Surveillance",
+    legend: [{ code: "d", name: "Disease surveillance", color: "#e34a33" }],
+    hasChart: false,
+    isVisible: true,
+  },
+  {
+    id: "covid-19",
+    title: "COVID-19",
+    legend: [
+      { code: "c", name: "Surveillance", color: "#d95f0e" },
+      { code: "v", name: "Vaccine", color: "#fec44f" },
+    ],
+    hasChart: false,
+    isVisible: true,
+  },
+  {
+    id: "logistics",
+    title: "Logistics",
+    legend: [{ code: "i", name: "Logistics", color: "#1d91c0" }],
+    hasChart: false,
+    isVisible: true,
+  },
+  /*
   {
     id: "covid-19",
     title: "COVID-19 Surveillance",
@@ -29,29 +54,35 @@ export const categories = [
     ],
     hasChart: false,
   },
+  */
   {
     id: "tracker",
     title: "Tracker",
     legend: [{ code: "t", name: "Tracker", color: "#e34a33" }],
     hasChart: true,
+    isVisible: false,
   },
   {
     id: "android",
     title: "Android app",
     legend: [{ code: "a", name: "Android app", color: "#2ca25f" }],
     hasChart: true,
+    isVisible: false,
   },
+  /*
   {
     id: "who",
     title: "WHO Packages",
     legend: [{ code: "w", name: "WHO Packages", color: "#1d91c0" }],
     hasChart: false,
   },
+  */
   {
     id: "emis",
-    title: "Education Management Information System (EMIS)",
+    title: "Education",
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
     hasChart: false,
+    isVisible: true,
   },
 ];
 

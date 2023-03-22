@@ -88,7 +88,7 @@ const Map = ({ category, data, focus, selected, onClick }) => {
         },
       }).addTo(instance);
 
-      fetch("./countries_indian_states.json")
+      fetch("./countries.json")
         .then((response) => response.json())
         .then((features) => {
           setLayer(

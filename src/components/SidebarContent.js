@@ -13,15 +13,17 @@ const Sidebar = ({ category, data, isDocked, onClose, onSelect }) => (
         this interactive map.
       </p>
     </div>
-    {categories.map(item => (
-      <Category
-        key={item.id}
-        onClick={onSelect}
-        selected={category === item.id}
-        data={data}
-        {...item}
-      />
-    ))}
+    {categories
+      .filter((c) => c.isVisible)
+      .map((item) => (
+        <Category
+          key={item.id}
+          onClick={onSelect}
+          selected={category === item.id}
+          data={data}
+          {...item}
+        />
+      ))}
   </>
 );
 

@@ -2,7 +2,7 @@
   "name": "dhis2-in-action",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://dhis2.github.io/dhis2-in-action",
+  "homepage2": "https://dhis2.github.io/dhis2-in-action",
   "dependencies": {
     "@babel/polyfill": "^7.10.1",
     "@testing-library/jest-dom": "^4.2.4",
