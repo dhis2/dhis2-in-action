@@ -9,82 +9,59 @@ export const categories = [
       { code: "p", name: "Subnational", color: "#d9f0a3" },
     ],
     hasChart: true,
-    isVisible: true,
+    inSidebar: true,
   },
   {
     id: "disease",
     title: "Disease Surveillance",
     legend: [{ code: "d", name: "Disease surveillance", color: "#e34a33" }],
     hasChart: false,
-    isVisible: true,
+    inSidebar: true,
   },
   {
     id: "covid-19",
     title: "COVID-19",
     legend: [
-      { code: "c", name: "Surveillance", color: "#d95f0e" },
-      { code: "v", name: "Vaccine", color: "#fec44f" },
+      { code: "y", name: "Surveillance & Vaccine", color: "#a63603" },
+      { code: "c", name: "Surveillance only", color: "#fd8d3c" },
+      { code: "x", name: "Vaccine only", color: "#fdd0a2" },
     ],
     hasChart: false,
-    isVisible: true,
+    inSidebar: true,
   },
   {
     id: "logistics",
     title: "Logistics",
-    legend: [{ code: "i", name: "Logistics", color: "#1d91c0" }],
+    legend: [{ code: "l", name: "Logistics", color: "#1d91c0" }],
     hasChart: false,
-    isVisible: true,
+    inSidebar: true,
   },
-  /*
-  {
-    id: "covid-19",
-    title: "COVID-19 Surveillance",
-    legend: [
-      { code: "c", name: "Operational", color: "#d95f0e" },
-      { code: "v", name: "In development", color: "#fec44f" },
-    ],
-    hasChart: false,
-  },
-  {
-    id: "covid-19-vaccine",
-    title: "COVID-19 Vaccine",
-    legend: [
-      { code: "x", name: "Operational", color: "#7D2BA2" },
-      { code: "z", name: "In development", color: "#D098EB" },
-    ],
-    hasChart: false,
-  },
-  */
   {
     id: "tracker",
     title: "Tracker",
     legend: [{ code: "t", name: "Tracker", color: "#e34a33" }],
     hasChart: true,
-    isVisible: false,
+    inSidebar: false,
   },
   {
     id: "android",
     title: "Android app",
     legend: [{ code: "a", name: "Android app", color: "#2ca25f" }],
     hasChart: true,
-    isVisible: false,
+    inSidebar: false,
   },
-  /*
-  {
-    id: "who",
-    title: "WHO Packages",
-    legend: [{ code: "w", name: "WHO Packages", color: "#1d91c0" }],
-    hasChart: false,
-  },
-  */
   {
     id: "emis",
     title: "Education",
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
     hasChart: false,
-    isVisible: true,
+    inSidebar: true,
   },
 ];
+
+export const sidebarCategories = categories
+  .filter((c) => c.inSidebar)
+  .map((c) => c.id);
 
 const allLetters = categories
   .flatMap((c) => c.legend)
@@ -121,14 +98,6 @@ const parseData = ({ values }) => {
         let letters = row[cols.indexOf(`Y${y}`)];
 
         if (letters) {
-          // Remove and fix in google spreadsheet
-          /*
-          if (id.startsWith("IN-")) {
-            // s/p is not valid for indian states
-            letters = letters.replace("s", "").replace("p", "");
-          }
-          */
-
           if (letters.length) {
             country[y] = letters;
 
@@ -190,7 +159,7 @@ const parseFocusData = ({ values }) => {
 
 const fetchData = (sheet) =>
   fetchJsonp(
-    `https://sheets.googleapis.com/v4/spreadsheets/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
+    `https://sheets.googleapis.com/v4/spreadsheets/1GRqJrapEJ7HBnrsvcIA0PlTok1DfgRLng7S4XLODXS4/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
     { jsonpCallback: "callback" }
   ).then((response) => response.json());
 

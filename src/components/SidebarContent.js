@@ -14,7 +14,7 @@ const Sidebar = ({ category, data, isDocked, onClose, onSelect }) => (
       </p>
     </div>
     {categories
-      .filter((c) => c.isVisible)
+      .filter((c) => c.inSidebar)
       .map((item) => (
         <Category
           key={item.id}

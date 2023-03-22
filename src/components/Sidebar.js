@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactSidebar from "react-sidebar";
 import SidebarContent from "./SidebarContent";
 import SidebarToggle from "./SidebarToggle";
+import { sidebarCategories } from "../utils/data";
 import "./Sidebar.css";
 
 const App = ({ category, data, onSelect, children }) => {
@@ -13,6 +14,10 @@ const App = ({ category, data, onSelect, children }) => {
     mql.addListener(() => setSidebarDocked(mql.matches));
     setSidebarDocked(mql.matches);
   }, []);
+
+  if (!sidebarCategories.includes(category)) {
+    return children;
+  }
 
   return (
     <ReactSidebar
