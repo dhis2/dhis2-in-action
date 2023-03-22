@@ -122,10 +122,12 @@ const parseData = ({ values }) => {
 
         if (letters) {
           // Remove and fix in google spreadsheet
+          /*
           if (id.startsWith("IN-")) {
             // s/p is not valid for indian states
             letters = letters.replace("s", "").replace("p", "");
           }
+          */
 
           if (letters.length) {
             country[y] = letters;

@@ -126,15 +126,6 @@ const Map = ({ category, data, focus, selected, onClick }) => {
           // Use name from Google Spreadsheet
           item.feature.properties.NAME = country.name;
 
-          // India: show country or states
-          if (code === "IN") {
-            if (legend.some(({ code }) => letters.includes(code))) {
-              item.bringToFront();
-            } else {
-              item.bringToBack();
-            }
-          }
-
           legend.forEach(({ code, color }) => {
             if (letters.indexOf(code) !== -1) {
               item.setStyle({
