@@ -7,7 +7,7 @@ const Category = ({ id, title, legend, selected, data, onClick }) => (
     onClick={() => onClick(id)}
     className={`Category${selected ? " Category-selected" : ""}`}
   >
-    <h2>{title}</h2>
+    <h3>{title}</h3>
     {selected && <Legend items={legend} data={data} />}
   </div>
 );

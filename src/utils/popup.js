@@ -1,3 +1,7 @@
+import { categories } from "../utils/data";
+
+const isExploreMode = (legend) => legend[0].code === "_";
+
 export const getPopupContent = (feature, data, focus, legend) => {
   const { CODE, NAME } = feature.properties;
   const country = data.countries[CODE];
@@ -37,18 +41,27 @@ export const getPopupContent = (feature, data, focus, legend) => {
       if (readmorelink) {
         content += `<p><a href="${readmorelink}" target="_blank">Learn more</a></p>`;
       }
-    } else {
+    } else if (items.length) {
       content += items
-        .map(
-          ({ name, year }) =>
-            `${
-              name.includes("National")
-                ? CODE.includes("-")
-                  ? "State"
-                  : "National"
-                : name
-            }: ${year}`
+        .map(({ name, year }) =>
+          name === "National"
+            ? `National scale since ${year}`
+            : name === "Subnational"
+            ? `Using DHIS2 since ${year}`
+            : `${name}: ${year}`
         )
+        .join("<br/>");
+    } else if (isExploreMode(legend)) {
+      const letters = country[data.lastYear];
+
+      content += categories
+        .filter(
+          (c) => c.inSidebar && c.legend.find((l) => letters.includes(l.code))
+        )
+        .map(({ title, legend }) => {
+          const { name } = legend.find((l) => letters.includes(l.code));
+          return legend.length > 1 ? `${title}: ${name}` : name;
+        })
         .join("<br/>");
     }
   }

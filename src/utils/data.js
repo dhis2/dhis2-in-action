@@ -2,7 +2,16 @@ import fetchJsonp from "fetch-jsonp";
 
 export const categories = [
   {
+    id: "all",
+    group: "explore",
+    title: "Where is DHIS2 used?",
+    legend: [{ code: "_", name: "All countries", color: "#0080d4" }],
+    hasChart: false,
+    inSidebar: true,
+  },
+  {
     id: "health",
+    group: "country-owned",
     title: "Health",
     legend: [
       { code: "s", name: "National", color: "#238443" },
@@ -13,13 +22,17 @@ export const categories = [
   },
   {
     id: "disease",
+    group: "country-owned",
     title: "Disease Surveillance",
-    legend: [{ code: "d", name: "Disease surveillance", color: "#e34a33" }],
+    legend: [
+      { code: "d", name: "National surveillance system", color: "#e34a33" },
+    ],
     hasChart: false,
     inSidebar: true,
   },
   {
     id: "covid-19",
+    group: "country-owned",
     title: "COVID-19",
     legend: [
       { code: "y", name: "Surveillance & Vaccine", color: "#a63603" },
@@ -31,13 +44,15 @@ export const categories = [
   },
   {
     id: "logistics",
+    group: "country-owned",
     title: "Logistics",
-    legend: [{ code: "l", name: "Logistics", color: "#1d91c0" }],
+    legend: [{ code: "l", name: "DHIS2 for Logistics", color: "#1d91c0" }],
     hasChart: false,
     inSidebar: true,
   },
   {
     id: "tracker",
+    group: "country-owned",
     title: "Tracker",
     legend: [{ code: "t", name: "Tracker", color: "#e34a33" }],
     hasChart: true,
@@ -45,6 +60,7 @@ export const categories = [
   },
   {
     id: "android",
+    group: "country-owned",
     title: "Android app",
     legend: [{ code: "a", name: "Android app", color: "#2ca25f" }],
     hasChart: true,
@@ -52,12 +68,35 @@ export const categories = [
   },
   {
     id: "emis",
+    group: "country-owned",
     title: "Education",
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
     hasChart: false,
     inSidebar: true,
   },
+  {
+    id: "other",
+    group: "country-owned",
+    title: "Other sectors",
+    legend: [{ code: "o", name: "DHIS2 in other sectors", color: "#ae017e" }],
+    hasChart: false,
+    inSidebar: true,
+  },
+  {
+    id: "projects",
+    group: "other",
+    title: "Projects using DHIS2",
+    legend: [{ code: "n", name: "Included countries", color: "#ae017e" }],
+    hasChart: false,
+    inSidebar: true,
+  },
 ];
+
+export const categoryGroups = {
+  explore: "Explore the map",
+  "country-owned": "Country-owned systems",
+  other: "NGO and other systems",
+};
 
 export const sidebarCategories = categories
   .filter((c) => c.inSidebar)
@@ -65,6 +104,7 @@ export const sidebarCategories = categories
 
 const allLetters = categories
   .flatMap((c) => c.legend)
+  .filter((c) => c.code)
   .reduce((obj, { code }) => ({ ...obj, [code]: 0 }), {});
 
 const isYear = /^Y\d{4}$/;
@@ -104,6 +144,9 @@ const parseData = ({ values }) => {
             if (!year[y]) {
               year[y] = { ...allLetters };
             }
+
+            // '_' is used for any letter
+            year[y]["_"]++;
 
             letters.split("").forEach((value) => {
               year[y][value]++;

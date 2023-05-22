@@ -17,7 +17,7 @@ const getInitialCategory = () => {
     }
   }
 
-  return "health"; // Default category
+  return "all"; // Default category
 };
 
 const App = () => {

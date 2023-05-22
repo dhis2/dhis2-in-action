@@ -127,7 +127,7 @@ const Map = ({ category, data, focus, selected, onClick }) => {
           item.feature.properties.NAME = country.name;
 
           legend.forEach(({ code, color }) => {
-            if (letters.indexOf(code) !== -1) {
+            if (letters.indexOf(code) !== -1 || code === "_") {
               item.setStyle({
                 fillColor: color,
               });
@@ -219,6 +219,13 @@ const Map = ({ category, data, focus, selected, onClick }) => {
       }
     };
   }, [instance, onPopupOpen, onPopupClose]);
+
+  // Close popup when category changes
+  useEffect(() => {
+    if (instance) {
+      instance.closePopup();
+    }
+  }, [instance, category]);
 
   return <div ref={container} className="Map"></div>;
 };

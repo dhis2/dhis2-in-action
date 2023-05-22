@@ -7,9 +7,9 @@ const Legend = ({ items, data }) => {
   return (
     <div className="Legend">
       {items.map(({ code, name, color }) => (
-        <div key={code}>
-          <span style={{ backgroundColor: color }}></span> {name} ({count[code]}
-          )
+        <div key={color}>
+          <span style={{ backgroundColor: color }}></span> {name}
+          {count[code] ? ` (${count[code]})` : ""}
         </div>
       ))}
     </div>

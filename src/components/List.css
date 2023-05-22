@@ -48,7 +48,6 @@
 .List ul {
   padding: 0;
   column-width: 110px;
-  column-fill: auto;
   height: calc(100% - 45px);
 }
 

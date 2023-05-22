@@ -1,13 +1,18 @@
 .Legend {
-  padding-top: 10px;
-  font-size: 14px;
+  padding-top: 4px;
+  font-size: 13px;
 }
 
 .Legend div {
-  height: 24px;
+  line-height: 22px;
+  position: relative;
+  margin-left: 22px;
 }
 
 .Legend span {
+  position: absolute;
+  left: -22px;
+  top: 3px;
   display: inline-block;
   height: 14px;
   width: 14px;
@@ -15,4 +20,5 @@
   border: 1px solid #777;
   vertical-align: bottom;
   margin-right: 4px;
+  background-color: yellow;
 }
