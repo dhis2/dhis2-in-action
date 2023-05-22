@@ -20,7 +20,23 @@ export const getPopupContent = (feature, data, focus, legend) => {
     const letter =
       countryFocus && items.map((i) => i.code).find((l) => !!countryFocus[l]);
 
+    const itemsContent = items.length
+      ? items
+          .map(({ name, year }) =>
+            name === "National"
+              ? `National scale since ${year}`
+              : name === "Subnational"
+              ? `Using DHIS2 since ${year}`
+              : `${name}: ${year}`
+          )
+          .join("<br/>")
+      : "";
+
     if (letter) {
+      if (itemsContent) {
+        content += `<p>${itemsContent}</p>`;
+      }
+
       const { title, body, imageurl, imagelink, youtubeid, readmorelink } =
         countryFocus[letter];
 
@@ -41,16 +57,8 @@ export const getPopupContent = (feature, data, focus, legend) => {
       if (readmorelink) {
         content += `<p><a href="${readmorelink}" target="_blank">Learn more</a></p>`;
       }
-    } else if (items.length) {
-      content += items
-        .map(({ name, year }) =>
-          name === "National"
-            ? `National scale since ${year}`
-            : name === "Subnational"
-            ? `Using DHIS2 since ${year}`
-            : `${name}: ${year}`
-        )
-        .join("<br/>");
+    } else if (itemsContent) {
+      content += itemsContent;
     } else if (isExploreMode(legend)) {
       const letters = country[data.lastYear];
 
