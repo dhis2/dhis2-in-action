@@ -7,7 +7,6 @@ export const categories = [
     title: "Where is DHIS2 used?",
     legend: [{ code: "_", name: "All countries", color: "#0080d4" }],
     hasChart: false,
-    inSidebar: true,
   },
   {
     id: "health",
@@ -18,7 +17,6 @@ export const categories = [
       { code: "p", name: "Subnational", color: "#d9f0a3" },
     ],
     hasChart: true,
-    inSidebar: true,
   },
   {
     id: "disease",
@@ -28,7 +26,6 @@ export const categories = [
       { code: "d", name: "National surveillance system", color: "#e34a33" },
     ],
     hasChart: false,
-    inSidebar: true,
   },
   {
     id: "covid-19",
@@ -40,7 +37,6 @@ export const categories = [
       { code: "x", name: "Vaccine only", color: "#fdd0a2" },
     ],
     hasChart: false,
-    inSidebar: true,
   },
   {
     id: "logistics",
@@ -48,7 +44,6 @@ export const categories = [
     title: "Logistics",
     legend: [{ code: "l", name: "DHIS2 for Logistics", color: "#1d91c0" }],
     hasChart: false,
-    inSidebar: true,
   },
   {
     id: "tracker",
@@ -56,7 +51,7 @@ export const categories = [
     title: "Tracker",
     legend: [{ code: "t", name: "Tracker", color: "#e34a33" }],
     hasChart: true,
-    inSidebar: false,
+    legacy: true,
   },
   {
     id: "android",
@@ -64,7 +59,7 @@ export const categories = [
     title: "Android app",
     legend: [{ code: "a", name: "Android app", color: "#2ca25f" }],
     hasChart: true,
-    inSidebar: false,
+    legacy: true,
   },
   {
     id: "emis",
@@ -72,7 +67,6 @@ export const categories = [
     title: "Education",
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
     hasChart: false,
-    inSidebar: true,
   },
   {
     id: "other",
@@ -80,7 +74,6 @@ export const categories = [
     title: "Other sectors",
     legend: [{ code: "o", name: "DHIS2 in other sectors", color: "#ae017e" }],
     hasChart: false,
-    inSidebar: true,
   },
   {
     id: "projects",
@@ -88,7 +81,6 @@ export const categories = [
     title: "Projects using DHIS2",
     legend: [{ code: "n", name: "Included countries", color: "#ae017e" }],
     hasChart: false,
-    inSidebar: true,
   },
 ];
 
@@ -99,7 +91,11 @@ export const categoryGroups = {
 };
 
 export const sidebarCategories = categories
-  .filter((c) => c.inSidebar)
+  .filter((c) => !c.legacy)
+  .map((c) => c.id);
+
+export const legacyCategories = categories
+  .filter((c) => c.legacy)
   .map((c) => c.id);
 
 const allLetters = categories
@@ -109,7 +105,7 @@ const allLetters = categories
 
 const isYear = /^Y\d{4}$/;
 
-const parseData = ({ values }) => {
+const parseData = (values, legacy) => {
   const cols = values[0];
   const idx = cols.indexOf("Code");
   const namex = cols.indexOf("Name");
@@ -137,6 +133,11 @@ const parseData = ({ values }) => {
       years.forEach((y) => {
         let letters = row[cols.indexOf(`Y${y}`)];
 
+        // Remove tracker and android
+        if (!legacy) {
+          letters = (letters || "").replace("t", "").replace("a", "");
+        }
+
         if (letters) {
           if (letters.length) {
             country[y] = letters;
@@ -158,6 +159,13 @@ const parseData = ({ values }) => {
   });
 
   return { countries, year, years, lastYear };
+};
+
+const parseSheetData = ({ values }) => {
+  return {
+    current: parseData(values, false),
+    legacy: parseData(values, true), // Includes tracker and android
+  };
 };
 
 const parseFocusData = ({ values }) => {
@@ -207,7 +215,7 @@ const fetchData = (sheet) =>
   ).then((response) => response.json());
 
 export const getData = () =>
-  fetchData("Country status per year").then(parseData);
+  fetchData("Country status per year").then(parseSheetData);
 
 export const getFocusData = () =>
   fetchData("Country focus").then(parseFocusData);

@@ -1,7 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useContext, useMemo } from "react";
+import { DataContext } from "./DataProvider";
 import "./Legend.css";
 
-const Legend = ({ items, data }) => {
+const Legend = ({ items }) => {
+  const dataContext = useContext(DataContext);
+  const data = dataContext?.current;
+
   const count = useMemo(() => (data ? data.year[data.lastYear] : {}), [data]);
 
   return (

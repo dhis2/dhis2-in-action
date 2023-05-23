@@ -2,7 +2,7 @@ import React from "react";
 import SidebarToggle from "./SidebarToggle";
 import CategoryGroup from "./CategoryGroup";
 
-const Sidebar = ({ category, data, isDocked, onClose, onSelect }) => {
+const Sidebar = ({ category, isDocked, onClose, onSelect }) => {
   return (
     <>
       {!isDocked && <SidebarToggle type="close" onClick={onClose} />}
@@ -13,24 +13,13 @@ const Sidebar = ({ category, data, isDocked, onClose, onSelect }) => {
           this interactive map.
         </p>
       </div>
-      <CategoryGroup
-        group="explore"
-        onClick={onSelect}
-        category={category}
-        data={data}
-      />
+      <CategoryGroup group="explore" onClick={onSelect} category={category} />
       <CategoryGroup
         group="country-owned"
         onClick={onSelect}
         category={category}
-        data={data}
       />
-      <CategoryGroup
-        group="other"
-        onClick={onSelect}
-        category={category}
-        data={data}
-      />
+      <CategoryGroup group="other" onClick={onSelect} category={category} />
     </>
   );
 };
