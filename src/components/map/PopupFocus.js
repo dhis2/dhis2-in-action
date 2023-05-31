@@ -6,7 +6,7 @@ const PopupFocus = ({ data }) => {
   return (
     <>
       <h3>{title}</h3>
-      {body}
+      {body && <div dangerouslySetInnerHTML={{ __html: body }} />}
       {youtubeid ? (
         <div className="aspect-ratio">
           <iframe

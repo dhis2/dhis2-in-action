@@ -1,5 +1,7 @@
 import fetchJsonp from "fetch-jsonp";
 
+// Colors: https://sashamaps.net/docs/resources/20-colors/
+
 export const categories = [
   {
     id: "all",
@@ -42,7 +44,7 @@ export const categories = [
     id: "logistics",
     group: "country-owned",
     title: "Logistics",
-    legend: [{ code: "l", name: "DHIS2 for Logistics", color: "#1d91c0" }],
+    legend: [{ code: "l", name: "DHIS2 for Logistics", color: "#808000" }],
     hasChart: false,
   },
   {
@@ -65,7 +67,7 @@ export const categories = [
     id: "emis",
     group: "country-owned",
     title: "Education",
-    legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
+    legend: [{ code: "e", name: "DHIS2 for Education", color: "#ff7f00" }],
     hasChart: false,
   },
   {
@@ -79,7 +81,7 @@ export const categories = [
     id: "projects",
     group: "other",
     title: "Projects using DHIS2",
-    legend: [{ code: "n", name: "Included countries", color: "#ae017e" }],
+    legend: [{ code: "n", name: "Included countries", color: "#ffe119" }],
     hasChart: false,
   },
 ];
