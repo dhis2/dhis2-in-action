@@ -1,67 +1,113 @@
 import fetchJsonp from "fetch-jsonp";
 
+// Colors: https://sashamaps.net/docs/resources/20-colors/
+
 export const categories = [
   {
+    id: "all",
+    group: "explore",
+    title: "Where is DHIS2 used?",
+    legend: [{ code: "_", name: "All countries", color: "#0080d4" }],
+    hasChart: false,
+  },
+  {
     id: "health",
-    title: "Health Information System",
+    group: "country-owned",
+    title: "Health",
     legend: [
       { code: "s", name: "National", color: "#238443" },
-      { code: "i", name: "Indian State", color: "#78c679" },
-      { code: "p", name: "Pilot", color: "#d9f0a3" },
+      { code: "p", name: "Subnational", color: "#d9f0a3" },
     ],
     hasChart: true,
   },
   {
-    id: "covid-19",
-    title: "COVID-19 Surveillance",
+    id: "disease",
+    group: "country-owned",
+    title: "Disease Surveillance",
     legend: [
-      { code: "c", name: "Operational", color: "#d95f0e" },
-      { code: "v", name: "In development", color: "#fec44f" },
+      { code: "d", name: "National surveillance system", color: "#e34a33" },
     ],
     hasChart: false,
   },
   {
-    id: "covid-19-vaccine",
-    title: "COVID-19 Vaccine",
+    id: "covid-19",
+    group: "country-owned",
+    title: "COVID-19",
     legend: [
-      { code: "x", name: "Operational", color: "#7D2BA2" },
-      { code: "z", name: "In development", color: "#D098EB" },
+      { code: "y", name: "Surveillance & Vaccine", color: "#a63603" },
+      { code: "c", name: "Surveillance only", color: "#fd8d3c" },
+      { code: "x", name: "Vaccine only", color: "#fdd0a2" },
     ],
+    hasChart: false,
+  },
+  {
+    id: "logistics",
+    group: "country-owned",
+    title: "Logistics",
+    legend: [{ code: "l", name: "DHIS2 for Logistics", color: "#808000" }],
     hasChart: false,
   },
   {
     id: "tracker",
+    group: "country-owned",
     title: "Tracker",
     legend: [{ code: "t", name: "Tracker", color: "#e34a33" }],
     hasChart: true,
+    legacy: true,
   },
   {
     id: "android",
+    group: "country-owned",
     title: "Android app",
     legend: [{ code: "a", name: "Android app", color: "#2ca25f" }],
     hasChart: true,
-  },
-  {
-    id: "who",
-    title: "WHO Packages",
-    legend: [{ code: "w", name: "WHO Packages", color: "#1d91c0" }],
-    hasChart: false,
+    legacy: true,
   },
   {
     id: "emis",
-    title: "Education Management Information System (EMIS)",
+    group: "country-owned",
+    title: "Education",
     legend: [{ code: "e", name: "DHIS2 for Education", color: "#ae017e" }],
+    hasChart: false,
+  },
+  {
+    id: "other",
+    group: "country-owned",
+    title: "Other sectors",
+    legend: [{ code: "o", name: "DHIS2 in other sectors", color: "#ff7f00" }],
+    hasChart: false,
+  },
+  {
+    id: "projects",
+    group: "other",
+    title: "Projects using DHIS2",
+    legend: [{ code: "n", name: "Active projects", color: "#ffe119" }],
     hasChart: false,
   },
 ];
 
+export const categoryGroups = {
+  explore: "Explore the map",
+  "country-owned": "Country-owned systems",
+  other: "NGO and other systems",
+};
+
+export const sidebarCategories = categories
+  .filter((c) => !c.legacy)
+  .map((c) => c.id);
+
+export const legacyCategories = categories
+  .filter((c) => c.legacy)
+  .map((c) => c.id);
+
 const allLetters = categories
   .flatMap((c) => c.legend)
+  .filter((c) => c.code)
   .reduce((obj, { code }) => ({ ...obj, [code]: 0 }), {});
 
 const isYear = /^Y\d{4}$/;
 
-const parseData = ({ values }) => {
+const parseData = (values, legacy) => {
   const cols = values[0];
   const idx = cols.indexOf("Code");
   const namex = cols.indexOf("Name");
@@ -89,19 +135,21 @@ const parseData = ({ values }) => {
       years.forEach((y) => {
         let letters = row[cols.indexOf(`Y${y}`)];
 
-        if (letters) {
-          // Remove and fix in google spreadsheet
-          if (id.startsWith("IN-")) {
-            // s/p is not valid for indian states
-            letters = letters.replace("s", "").replace("p", "");
-          }
+        // Remove tracker and android
+        if (!legacy) {
+          letters = (letters || "").replace("t", "").replace("a", "");
+        }
 
+        if (letters) {
           if (letters.length) {
             country[y] = letters;
 
             if (!year[y]) {
               year[y] = { ...allLetters };
             }
+
+            // '_' is used for any letter
+            year[y]["_"]++;
 
             letters.split("").forEach((value) => {
               year[y][value]++;
@@ -113,6 +161,13 @@ const parseData = ({ values }) => {
   });
 
   return { countries, year, years, lastYear };
+};
+
+const parseSheetData = ({ values }) => {
+  return {
+    current: parseData(values, false),
+    legacy: parseData(values, true), // Includes tracker and android
+  };
 };
 
 const parseFocusData = ({ values }) => {
@@ -157,12 +212,12 @@ const parseFocusData = ({ values }) => {
 
 const fetchData = (sheet) =>
   fetchJsonp(
-    `https://sheets.googleapis.com/v4/spreadsheets/1Fd-vBoJPjp5wdCyJc7d_LOJPOg5uqdzVa3Eq5-VFR-g/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
+    `https://sheets.googleapis.com/v4/spreadsheets/1GRqJrapEJ7HBnrsvcIA0PlTok1DfgRLng7S4XLODXS4/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
     { jsonpCallback: "callback" }
   ).then((response) => response.json());
 
 export const getData = () =>
-  fetchData("Country status per year").then(parseData);
+  fetchData("Country status per year").then(parseSheetData);
 
 export const getFocusData = () =>
   fetchData("Country focus").then(parseFocusData);

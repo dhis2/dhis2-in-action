@@ -32,7 +32,7 @@ const List = ({ category, data, show, focus, onClick }) => {
         items: Object.values(countries)
           .filter((country) => {
             const letters = country[lastYear];
-            return letters && letters.indexOf(code) !== -1;
+            return letters && (code === "_" || letters.indexOf(code) !== -1);
           }, [])
           .map((c) => c.name)
           .sort(),

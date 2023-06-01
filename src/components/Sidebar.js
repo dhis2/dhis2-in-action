@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import ReactSidebar from "react-sidebar";
 import SidebarContent from "./SidebarContent";
 import SidebarToggle from "./SidebarToggle";
+import { sidebarCategories } from "../utils/data";
 import "./Sidebar.css";
 
-const App = ({ category, data, onSelect, children }) => {
+const App = ({ category, onSelect, children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarDocked, setSidebarDocked] = useState(false);
 
@@ -14,12 +15,15 @@ const App = ({ category, data, onSelect, children }) => {
     setSidebarDocked(mql.matches);
   }, []);
 
+  if (!sidebarCategories.includes(category)) {
+    return children;
+  }
+
   return (
     <ReactSidebar
       sidebar={
         <SidebarContent
           category={category}
-          data={data}
           onSelect={onSelect}
           isDocked={sidebarDocked}
           onClose={() => setSidebarOpen(false)}
@@ -36,7 +40,13 @@ const App = ({ category, data, onSelect, children }) => {
       {sidebarOpen && !sidebarDocked && (
         <div className="App-mask" onClick={() => setSidebarOpen(false)}></div>
       )}
-      {children}
+      <div
+        style={{
+          transition: "none",
+        }}
+      >
+        {children}
+      </div>
       {!sidebarOpen && !sidebarDocked && (
         <SidebarToggle type="open" onClick={() => setSidebarOpen(true)} />
       )}

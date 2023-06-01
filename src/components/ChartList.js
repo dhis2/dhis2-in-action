@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Chart from "./Chart";
 import List from "./List";
-import { categories } from "../utils/data";
+import { DataContext, FocusContext } from "./DataProvider";
+import { categories, legacyCategories } from "../utils/data";
 import "./ChartList.css";
 
-const ChartListToggle = ({ category, data, focus, onClick }) => {
+const ChartListToggle = ({ category, onClick }) => {
+  const dataContext = useContext(DataContext);
+  const data =
+    dataContext?.[legacyCategories.includes(category) ? "legacy" : "current"];
+  const focus = useContext(FocusContext);
   const [showChart, setShowChart] = useState(true);
   const { hasChart } = categories.find((c) => c.id === category);
 

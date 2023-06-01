@@ -1,6 +1,6 @@
 .Category {
-  padding: 10px;
-  margin: 5px 0;
+  padding: 4px 0 6px 10px;
+  margin: 4px 0;
   cursor: pointer;
 }
 
@@ -8,9 +8,9 @@
   background-color: #edf7ff;
 }
 
-.Category h2 {
-  font-size: 16px;
-  font-weight: bold;
+.Category h3 {
+  font-size: 14px;
+  font-weight: normal;
   margin: 0;
   line-height: 20px;
 }

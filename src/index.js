@@ -11,7 +11,7 @@ import "core-js/features/object/values"; // IE 11 support
 import "core-js/features/promise"; // IE 11 support
 import "unfetch/polyfill"; // IE 11 support
 import "./index.css";
-import App from "./App";
+import App from "./components/App";
 import * as serviceWorker from "./serviceWorker";
 
 ReactDOM.render(<App />, document.getElementById("root"));

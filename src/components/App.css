@@ -20,6 +20,7 @@ body,
   top: 1px !important;
   bottom: 1px !important;
   right: 1px !important;
+  transition: none !important;
 }
 
 .App-overlay {

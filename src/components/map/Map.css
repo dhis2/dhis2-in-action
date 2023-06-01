@@ -77,6 +77,14 @@
   color: #000;
 }
 
+.leaflet-popup-content .explore {
+  cursor: pointer;
+}
+
+.leaflet-popup-content .explore:hover {
+  text-decoration: underline;
+}
+
 .leaflet-popup-content .aspect-ratio {
   margin-top: 10px;
   position: relative;
