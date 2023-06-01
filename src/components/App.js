@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Fullscreen from "./Fullscreen";
 import DataProvider from "./DataProvider";
+import Loader from "./Loader";
 import Sidebar from "./Sidebar";
 import MapProvider from "./map/MapProvider";
 import Graticule from "./map/Graticule";
@@ -34,6 +35,7 @@ const App = () => {
   return (
     <Fullscreen>
       <DataProvider>
+        <Loader />
         <Sidebar category={category} onSelect={setCategory}>
           <MapProvider>
             <Graticule />

@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { categories } from "../../utils/data";
 
-const PopupExplore = ({ country, letters, setCategory, setCountry }) => {
+const PopupExplore = ({ country, letters = "", setCategory, setCountry }) => {
   const onClick = useCallback(
     (category) => {
       setCategory(category);

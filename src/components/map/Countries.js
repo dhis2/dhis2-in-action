@@ -9,13 +9,14 @@ import { geoJSON } from "leaflet";
 import Popup from "./Popup";
 import { MapContext } from "./MapProvider";
 import CountryFocus from "./CountryFocus";
-import { DataContext } from "../DataProvider";
+import { CountriesContext, DataContext } from "../DataProvider";
 import { categories, legacyCategories } from "../../utils/data";
 import { getIconPosition } from "../../utils/map";
 
 const noDataColor = "#fff";
 
 const Countries = ({ category, selected, setCountry, setCategory }) => {
+  const countries = useContext(CountriesContext);
   const dataContext = useContext(DataContext);
   const data =
     dataContext?.[legacyCategories.includes(category) ? "legacy" : "current"];
@@ -41,20 +42,17 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
   );
 
   useEffect(() => {
-    fetch("./countries.json")
-      .then((response) => response.json())
-      .then((features) => {
-        setLayer(
-          geoJSON(features, {
-            color: "#555",
-            weight: 1,
-            fillColor: noDataColor,
-            fillOpacity: 0.75,
-          }).addTo(map)
-        );
-      })
-      .catch((error) => console.log(error));
-  }, [map]);
+    if (countries) {
+      setLayer(
+        geoJSON(countries, {
+          color: "#555",
+          weight: 1,
+          fillColor: noDataColor,
+          fillOpacity: 0.75,
+        }).addTo(map)
+      );
+    }
+  }, [map, countries]);
 
   useEffect(() => {
     if (layer && legend && data) {
@@ -72,8 +70,6 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
         if (code && countries[code] && countries[code][lastYear]) {
           const country = countries[code];
           const letters = country[lastYear];
-
-          // console.log("letters", letters, legend);
 
           // Use name from Google Spreadsheet
           item.feature.properties.NAME = country.name;
