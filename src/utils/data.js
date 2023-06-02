@@ -81,7 +81,7 @@ export const categories = [
     id: "projects",
     group: "other",
     title: "Projects using DHIS2",
-    legend: [{ code: "n", name: "Active projects", color: "#ffe119" }],
+    legend: [{ code: "n", name: "Non-governmental systems", color: "#ffe119" }],
     hasChart: false,
   },
 ];
