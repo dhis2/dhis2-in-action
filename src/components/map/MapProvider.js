@@ -7,7 +7,7 @@ import "./Map.css";
 export const MapContext = createContext();
 
 const bounds = [
-  [-50, -100],
+  [-50, -50],
   [65, 155],
 ];
 
