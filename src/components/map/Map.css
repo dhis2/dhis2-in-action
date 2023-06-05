@@ -24,7 +24,8 @@
   border: 1px solid #ccc !important;
 }
 
-.leaflet-bar a {
+.leaflet-bar a,
+.leaflet-bar a:hover {
   width: 30px;
   height: 30px;
   line-height: 28px;
