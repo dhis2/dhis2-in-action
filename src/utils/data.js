@@ -41,6 +41,19 @@ export const categories = [
     hasChart: false,
   },
   {
+    id: "onehealth",
+    group: "country-owned",
+    title: "One Health",
+    legend: [
+      {
+        code: "z",
+        name: "Animal health surveillance systems",
+        color: "#301934",
+      },
+    ],
+    hasChart: false,
+  },
+  {
     id: "climate",
     group: "country-owned",
     title: "Climate",
