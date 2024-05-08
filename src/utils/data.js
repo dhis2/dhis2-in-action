@@ -41,6 +41,15 @@ export const categories = [
     hasChart: false,
   },
   {
+    id: "climate",
+    group: "country-owned",
+    title: "Climate",
+    legend: [
+      { code: "w", name: "Systems using climate data", color: "#008080" },
+    ],
+    hasChart: false,
+  },
+  {
     id: "logistics",
     group: "country-owned",
     title: "Logistics",
@@ -81,7 +90,7 @@ export const categories = [
     id: "projects",
     group: "other",
     title: "Projects using DHIS2",
-    legend: [{ code: "n", name: "Non-governmental systems", color: "#ffe119" }],
+    legend: [{ code: "n", name: "Non-governmental systems", color: "#ffe119" }], // "#6fa2d0"
     hasChart: false,
   },
 ];
