@@ -35952,7 +35952,7 @@
     },
     {
       "type": "Feature",
-      "properties": { "NAME": "Kosovo", "CODE": "-99" },
+      "properties": { "NAME": "Kosovo", "CODE": "XK" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
