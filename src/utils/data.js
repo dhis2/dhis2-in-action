@@ -23,7 +23,7 @@ export const categories = [
   {
     id: "disease",
     group: "country-owned",
-    title: "Disease Surveillance",
+    title: "> Disease Surveillance",
     legend: [
       { code: "d", name: "National surveillance system", color: "#e34a33" },
     ],
@@ -32,11 +32,24 @@ export const categories = [
   {
     id: "covid-19",
     group: "country-owned",
-    title: "COVID-19",
+    title: "> COVID-19",
     legend: [
       { code: "y", name: "Surveillance & Vaccine", color: "#a63603" },
       { code: "c", name: "Surveillance only", color: "#fd8d3c" },
       { code: "x", name: "Vaccine only", color: "#fdd0a2" },
+    ],
+    hasChart: false,
+  },
+  {
+    id: "animal",
+    group: "country-owned",
+    title: "> Animal health",
+    legend: [
+      {
+        code: "z",
+        name: "Animal health and zoonoses",
+        color: "#ff7f00",
+      },
     ],
     hasChart: false,
   },
@@ -83,7 +96,7 @@ export const categories = [
     id: "other",
     group: "country-owned",
     title: "Other sectors",
-    legend: [{ code: "o", name: "DHIS2 in other sectors", color: "#ff7f00" }],
+    legend: [{ code: "o", name: "DHIS2 in other sectors", color: "#301934" }],
     hasChart: false,
   },
   {
