@@ -39,6 +39,7 @@ export const categories = [
       { code: "x", name: "Vaccine only", color: "#fdd0a2" },
     ],
     hasChart: false,
+    legacy: true,
   },
   {
     id: "animal",
