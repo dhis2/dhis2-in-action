@@ -2,6 +2,8 @@ import fetchJsonp from "fetch-jsonp";
 
 // Colors: https://sashamaps.net/docs/resources/20-colors/
 
+export const STATE_SEPARATOR = ":";
+
 export const categories = [
   {
     id: "all",
@@ -134,12 +136,37 @@ const parseData = (values, legacy) => {
   const cols = values[0];
   const idx = cols.indexOf("Code");
   const namex = cols.indexOf("Name");
+
   const years = cols.filter((c) => c.match(isYear)).map((c) => c.substring(1));
   const lastYear = years[years.length - 1];
+
   const rows = values.slice(1);
+
   const countries = {};
+  const states = {};
+  const countriesWithStates = {};
   const year = {};
+
   let skip = false;
+
+  const getLetters = (row, y) => row[cols.indexOf(`Y${y}`)] || "";
+
+  const cleanLetters = (letters) =>
+    legacy ? letters : letters.replace("t", "").replace("a", "");
+
+  const mergeLetters = (existing = "", incoming = "") =>
+    Array.from(new Set(existing + incoming)).join("");
+
+  const tallyLetters = (letters, y) => {
+    if (!letters?.length) return;
+
+    if (!year[y]) year[y] = { ...allLetters };
+    year[y]["_"]++;
+
+    for (const letter of letters) {
+      year[y][letter]++;
+    }
+  };
 
   rows.forEach((row) => {
     const id = row[idx];
@@ -151,39 +178,70 @@ const parseData = (values, legacy) => {
     }
 
     if (id && !skip) {
-      const country = (countries[id] = {
-        name: name,
-      });
 
-      years.forEach((y) => {
-        let letters = row[cols.indexOf(`Y${y}`)];
+      if (id.includes(STATE_SEPARATOR)) {
+        const [idCountry] = id.split(STATE_SEPARATOR);
+        const [nameCountry, nameState] = name.split(STATE_SEPARATOR);
 
-        // Remove tracker and android
-        if (!legacy) {
-          letters = (letters || "").replace("t", "").replace("a", "");
-        }
+        countriesWithStates[idCountry] = countriesWithStates[idCountry] || { name: nameCountry };
+        states[id] = states[id] || { name: nameState };
 
-        if (letters) {
-          if (letters.length) {
-            country[y] = letters;
+        const country = countriesWithStates[idCountry];
+        const state = states[id];
 
-            if (!year[y]) {
-              year[y] = { ...allLetters };
-            }
+        years.forEach((y) => {
+          let letters = getLetters(row, y);
+          letters = cleanLetters(letters)
 
-            // '_' is used for any letter
-            year[y]["_"]++;
+          if (!letters) return;
 
-            letters.split("").forEach((value) => {
-              year[y][value]++;
-            });
-          }
-        }
-      });
+          state[y] = letters;
+          country[y] = mergeLetters(country[y], letters);
+        });
+
+      } else {
+        const country = (countries[id] = {
+          name: name,
+        });
+
+        years.forEach((y) => {
+          let letters = getLetters(row, y);
+          letters = cleanLetters(letters)
+
+          if (!letters) return;
+
+          country[y] = letters;
+          tallyLetters(letters, y);
+        });
+
+      }
+
     }
   });
 
-  return { countries, year, years, lastYear };
+  Object.keys(countriesWithStates).forEach((c) => {
+    years.forEach((y) => {
+      let letters = countriesWithStates[c]?.[y];
+
+      if (!letters) return;
+
+      tallyLetters(letters, y);
+    });
+  });
+
+  return {
+    countries: {
+      ...countries,
+      ...countriesWithStates,
+    }, countriesOrStates: {
+      ...countries,
+      ...states,
+    }, countriesAndStates: {
+      ...countries,
+      ...countriesWithStates,
+      ...states,
+    }, year, years, lastYear
+  };
 };
 
 const parseSheetData = ({ values }) => {
@@ -235,7 +293,7 @@ const parseFocusData = ({ values }) => {
 
 const fetchData = (sheet) =>
   fetchJsonp(
-    `https://sheets.googleapis.com/v4/spreadsheets/1GRqJrapEJ7HBnrsvcIA0PlTok1DfgRLng7S4XLODXS4/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
+    `https://sheets.googleapis.com/v4/spreadsheets/1s8q4vHz4EfytF7Pi9tEYNBg7OZrR0r_bBSoT7E5cZbU/values/${sheet}?key=AIzaSyDWyCSemDgAxocSL7j9Dy4mi93xTTcPEek`,
     { jsonpCallback: "callback" }
   ).then((response) => response.json());
 

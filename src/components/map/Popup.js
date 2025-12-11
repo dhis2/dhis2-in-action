@@ -6,6 +6,7 @@ import PopupFocus from "./PopupFocus";
 import { MapContext } from "./MapProvider";
 import { DataContext, FocusContext } from "../DataProvider";
 import { legacyCategories } from "../../utils/data";
+import MatchingStatesLinks, { getMatchingStates } from "./MatchingStatesLinks";
 
 const container = document.createElement("div");
 
@@ -26,7 +27,7 @@ const Popup = ({
 
   const { CODE, NAME } = country;
 
-  const countryData = data?.countries[CODE];
+  const countryData = data?.countriesAndStates[CODE];
   const focusItem = legend.find((l) => focus?.[CODE]?.[l.code]);
   const countryFocus = focus[CODE]?.[focusItem?.code];
 
@@ -95,6 +96,7 @@ const Popup = ({
             <>{name}: Since </>
           )}
           {year}
+          <MatchingStatesLinks states={getMatchingStates({ data, countryCode: CODE, categoryCode: code, lastYear: data.lastYear })} onStateClick={setCountry} />
         </div>
       ))}
       {isExploreMode(legend) && countryData ? (
@@ -102,6 +104,7 @@ const Popup = ({
           country={country}
           letters={countryData[data.lastYear]}
           data={data}
+          lastYear={data.lastYear}
           setCountry={setCountry}
           setCategory={setCategory}
         />
