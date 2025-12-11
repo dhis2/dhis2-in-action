@@ -17,7 +17,7 @@ const MatchingStatesLinks = ({ states, onStateClick }) => {
   if (!states || states.length === 0) return null;
   return (
     <>
-      {" ("}
+      {": "}
       {states.map((state, idx) => (
         <>
           <span
@@ -35,7 +35,7 @@ const MatchingStatesLinks = ({ states, onStateClick }) => {
           </span>
         </>
       ))}
-      {")"}
+      {""}
     </>
   );
 };
