@@ -48,7 +48,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
           color: "#555",
           weight: 1,
           fillColor: noDataColor,
-          fillOpacity: 0.75,
+          fillOpacity: 1,
         }).addTo(map)
       );
     }

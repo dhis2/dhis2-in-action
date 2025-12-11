@@ -86,19 +86,34 @@ const Popup = ({
   return createPortal(
     <>
       <h2>{NAME}</h2>
-      {legendItems?.map(({ code, name, year }) => (
-        <div key={code}>
-          {name === "National" ? (
-            "National scale since "
-          ) : name === "Subnational" ? (
-            "Using DHIS2 since "
-          ) : (
-            <>{name}: Since </>
-          )}
-          {year}
-          <MatchingStatesLinks states={getMatchingStates({ data, countryCode: CODE, categoryCode: code, lastYear: data.lastYear })} onStateClick={setCountry} />
-        </div>
-      ))}
+      {legendItems?.map(({ code, name, year }) => {
+        const matchingStates = getMatchingStates({
+          data,
+          countryCode: CODE,
+          categoryCode: code,
+          lastYear: data.lastYear,
+        });
+
+        return (
+          <div key={code}>
+            {name === "National" ? (
+              matchingStates.length ? "National scale" : "National scale since "
+            ) : name === "Subnational" ? (
+              matchingStates.length ? "Using DHIS2" : "Using DHIS2 since "
+            ) : matchingStates.length ? (
+              <>{name}</>
+            ) : (
+              <>{name}: Since </>
+            )}
+
+            {matchingStates.length ? (
+              <MatchingStatesLinks states={matchingStates} onStateClick={setCountry} />
+            ) : (
+              year
+            )}
+          </div>
+        );
+      })}
       {isExploreMode(legend) && countryData ? (
         <PopupExplore
           country={country}
