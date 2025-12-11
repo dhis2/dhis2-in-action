@@ -6,6 +6,7 @@ import PopupFocus from "./PopupFocus";
 import { MapContext } from "./MapProvider";
 import { DataContext, FocusContext } from "../DataProvider";
 import { legacyCategories } from "../../utils/data";
+import MatchingStatesLinks, { getMatchingStates } from "./MatchingStatesLinks";
 
 const container = document.createElement("div");
 
@@ -26,7 +27,7 @@ const Popup = ({
 
   const { CODE, NAME } = country;
 
-  const countryData = data?.countries[CODE];
+  const countryData = data?.countriesAndStates[CODE];
   const focusItem = legend.find((l) => focus?.[CODE]?.[l.code]);
   const countryFocus = focus[CODE]?.[focusItem?.code];
 
@@ -85,23 +86,40 @@ const Popup = ({
   return createPortal(
     <>
       <h2>{NAME}</h2>
-      {legendItems?.map(({ code, name, year }) => (
-        <div key={code}>
-          {name === "National" ? (
-            "National scale since "
-          ) : name === "Subnational" ? (
-            "Using DHIS2 since "
-          ) : (
-            <>{name}: Since </>
-          )}
-          {year}
-        </div>
-      ))}
+      {legendItems?.map(({ code, name, year }) => {
+        const matchingStates = getMatchingStates({
+          data,
+          countryCode: CODE,
+          categoryCode: code,
+          lastYear: data.lastYear,
+        });
+
+        return (
+          <div key={code}>
+            {name === "National" ? (
+              matchingStates.length ? "National scale" : "National scale since "
+            ) : name === "Subnational" ? (
+              matchingStates.length ? "Using DHIS2" : "Using DHIS2 since "
+            ) : matchingStates.length ? (
+              <>{name}</>
+            ) : (
+              <>{name}: Since </>
+            )}
+
+            {matchingStates.length ? (
+              <MatchingStatesLinks states={matchingStates} onStateClick={setCountry} />
+            ) : (
+              year
+            )}
+          </div>
+        );
+      })}
       {isExploreMode(legend) && countryData ? (
         <PopupExplore
           country={country}
           letters={countryData[data.lastYear]}
           data={data}
+          lastYear={data.lastYear}
           setCountry={setCountry}
           setCategory={setCategory}
         />

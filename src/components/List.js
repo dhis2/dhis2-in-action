@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { categories } from "../utils/data";
+import { STATE_SEPARATOR, categories } from "../utils/data";
 import "./List.css";
 
 const marginTop = 70;
@@ -32,7 +32,7 @@ const List = ({ category, data, show, focus, onClick }) => {
         items: Object.values(countries)
           .filter((country) => {
             const letters = country[lastYear];
-            return letters && (code === "_" || letters.indexOf(code) !== -1);
+            return letters && (code === "_" || letters.indexOf(code) !== -1) && !country.name.includes(STATE_SEPARATOR);
           }, [])
           .map((c) => c.name)
           .sort(),
@@ -96,7 +96,7 @@ const List = ({ category, data, show, focus, onClick }) => {
                     <li key={name} onClick={() => onClick(name)}>
                       {name}
                       {focus.includes(name) ? (
-                        <img src="icon-info-48.png" alt="More information" />
+                        <img src="/dhis2-in-action/icon-info-48.png" alt="More information" />
                       ) : (
                         ""
                       )}

@@ -29,7 +29,7 @@ const CountryFocus = ({ layer, legend, onClick }) => {
       if (features.length) {
         const markerOptions = {
           icon: icon({
-            iconUrl: "icon-info-48.png",
+            iconUrl: "/dhis2-in-action/icon-info-48.png",
             iconSize: [20, 20],
           }),
         };
