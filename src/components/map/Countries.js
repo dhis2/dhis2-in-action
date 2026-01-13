@@ -48,7 +48,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
           color: "#555",
           weight: 1,
           fillColor: noDataColor,
-          fillOpacity: 0.75,
+          fillOpacity: 1,
         }).addTo(map)
       );
     }
@@ -56,7 +56,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
 
   useEffect(() => {
     if (layer && legend && data) {
-      const { countries, lastYear } = data;
+      const { countriesOrStates, lastYear } = data;
 
       layer.eachLayer((item) =>
         item.setStyle({
@@ -67,8 +67,8 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
       layer.eachLayer((item) => {
         const code = item.feature.properties.CODE;
 
-        if (code && countries[code] && countries[code][lastYear]) {
-          const country = countries[code];
+        if (code && countriesOrStates[code] && countriesOrStates[code][lastYear]) {
+          const country = countriesOrStates[code];
           const letters = country[lastYear];
 
           // Use name from Google Spreadsheet
