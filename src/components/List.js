@@ -96,7 +96,7 @@ const List = ({ category, data, show, focus, onClick }) => {
                     <li key={name} onClick={() => onClick(name)}>
                       {name}
                       {focus.includes(name) ? (
-                        <img src="/dhis2-in-action/icon-info-48.png" alt="More information" />
+                        <img src="icon-info-48.png" alt="More information" />
                       ) : (
                         ""
                       )}
