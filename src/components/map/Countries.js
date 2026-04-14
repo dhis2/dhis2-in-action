@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import { geoJSON } from "leaflet";
 import Popup from "./Popup";
@@ -12,8 +13,7 @@ import CountryFocus from "./CountryFocus";
 import { CountriesContext, DataContext } from "../DataProvider";
 import { categories, legacyCategories } from "../../utils/data";
 import { getIconPosition } from "../../utils/map";
-
-const noDataColor = "#fff";
+import { getCountryColor } from "../../utils/colors";
 
 const Countries = ({ category, selected, setCountry, setCategory }) => {
   const countries = useContext(CountriesContext);
@@ -25,6 +25,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
   const [layer, setLayer] = useState();
   const [feature, setFeature] = useState();
   const [latlng, setLatlng] = useState();
+  const hoveredLayer = useRef(null);
 
   const legend = useMemo(
     () => categories.find((c) => c.id === category).legend,
@@ -47,8 +48,26 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
         geoJSON(countries, {
           color: "#555",
           weight: 1,
-          fillColor: noDataColor,
+          fillColor: "#fff",
           fillOpacity: 1,
+          onEachFeature: (_feature, l) => {
+            l.on({
+              mouseover: (e) => {
+                if (hoveredLayer.current && hoveredLayer.current !== e.target) {
+                  hoveredLayer.current.setStyle({ color: "#555", weight: 1 });
+                }
+                hoveredLayer.current = e.target;
+                e.target.setStyle({ color: "#333", weight: 1.5 });
+                e.target.bringToFront();
+              },
+              mouseout: (e) => {
+                if (hoveredLayer.current === e.target) {
+                  hoveredLayer.current = null;
+                }
+                e.target.setStyle({ color: "#555", weight: 1 });
+              },
+            });
+          },
         }).addTo(map)
       );
     }
@@ -56,35 +75,33 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
 
   useEffect(() => {
     if (layer && legend && data) {
-      const { countriesOrStates, lastYear } = data;
-
-      layer.eachLayer((item) =>
-        item.setStyle({
-          fillColor: noDataColor,
-        })
-      );
+      const { countriesOrStates } = data;
 
       layer.eachLayer((item) => {
         const code = item.feature.properties.CODE;
 
-        if (code && countriesOrStates[code] && countriesOrStates[code][lastYear]) {
-          const country = countriesOrStates[code];
-          const letters = country[lastYear];
-
-          // Use name from Google Spreadsheet
-          item.feature.properties.NAME = country.name;
-
-          legend.forEach(({ code, color }) => {
-            if (letters.indexOf(code) !== -1 || code === "_") {
-              item.setStyle({
-                fillColor: color,
-              });
-            }
-          });
+        // Use name from Google Spreadsheet
+        if (code && countriesOrStates[code]) {
+          item.feature.properties.NAME = countriesOrStates[code].name;
         }
+
+        item.setStyle({ fillColor: getCountryColor(code, legend, data) });
       });
     }
   }, [layer, legend, data]);
+
+  useEffect(() => {
+    if (!map) return;
+    const reset = () => {
+      if (hoveredLayer.current) {
+        hoveredLayer.current.setStyle({ color: "#555", weight: 1 });
+        hoveredLayer.current = null;
+      }
+    };
+    const container = map.getContainer();
+    container.addEventListener("mouseleave", reset);
+    return () => container.removeEventListener("mouseleave", reset);
+  }, [map]);
 
   useEffect(() => {
     if (layer) {
