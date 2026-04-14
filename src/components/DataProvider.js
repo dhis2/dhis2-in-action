@@ -11,7 +11,7 @@ const DataProvider = ({ children }) => {
   const [focus, setFocus] = useState();
 
   useEffect(() => {
-    fetch('countries_us_states.json')
+    fetch('/dhis2-in-action/countries_and_states.json')
       .then((response) => response.json())
       .then(setCountries)
       .catch((error) => console.log(error));
