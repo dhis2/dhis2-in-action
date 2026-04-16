@@ -45,7 +45,7 @@ const GlobePopup = forwardRef(function GlobePopup({
         left: x - size.width / 2 - 22,
         top: y - size.height - 36,
         width: 300,
-        zIndex: 2000,
+        zIndex: 0,
         overflow: "visible",
         background: "none",
         visibility: size.height === 0 ? "hidden" : "visible",

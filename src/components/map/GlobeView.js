@@ -223,8 +223,14 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
 
   const clearHover = useCallback(() => {
     if (hoveredElRef.current) {
-      hoveredElRef.current.setAttribute("stroke", "#555");
-      hoveredElRef.current.setAttribute("stroke-width", "1");
+      const el = hoveredElRef.current;
+      el.setAttribute("stroke", "#555");
+      el.setAttribute("stroke-width", "1");
+      // Restore original draw order using the sibling recorded at hover-start
+      if (el._nextSibling !== undefined) {
+        if (el.parentNode) el.parentNode.insertBefore(el, el._nextSibling);
+        delete el._nextSibling;
+      }
       hoveredElRef.current = null;
     }
   }, []);
@@ -315,6 +321,8 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
 
   // Tracks the initial distance between two fingers for pinch-to-zoom
   const pinchStartRef = useRef(null); // { dist, scale }
+  // Ring buffer of recent touch positions for swipe momentum (same as mouse)
+  const touchSamplesRef = useRef([]);
 
   // Touch drag (1 finger) + pinch-to-zoom (2 fingers)
   const onTouchStart = useCallback((e) => {
@@ -331,18 +339,57 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     pinchStartRef.current = null;
     const t = e.touches[0];
     dragStart.current = { x: t.clientX, y: t.clientY, rotation: rotationRef.current };
+    touchSamplesRef.current = [{ x: t.clientX, y: t.clientY, t: performance.now() }];
   }, [scale]);
 
   const onTouchEnd = useCallback(() => {
     if (pinchStartRef.current) {
       pinchStartRef.current = null;
       isRotating.current = false;
-      setScale(scaleRef.current); // sync React state after imperative pinch
+      setScale(scaleRef.current);
     }
     if (!dragStart.current) return;
     dragStart.current = null;
-    setRotation([...rotationRef.current]);
-  }, []);
+    setTimeout(() => { wasDrag.current = false; }, 0);
+
+    // Swipe momentum — same logic as mouse coast
+    const samples = touchSamplesRef.current;
+    const newest = samples[samples.length - 1];
+    const oldest = samples[0];
+    if (!newest || !oldest) { isRotating.current = false; setRotation([...rotationRef.current]); return; }
+    const dt = newest.t - oldest.t || 1;
+    const vx = (newest.x - oldest.x) / dt;
+    const vy = (newest.y - oldest.y) / dt;
+    const DAMPING = 0.85;
+    const SCALE = DRAG_SENSITIVITY * 16;
+    const COAST_THRESHOLD_PX = 10;
+    if (Math.hypot(newest.x - oldest.x, newest.y - oldest.y) < COAST_THRESHOLD_PX) {
+      isRotating.current = false;
+      setRotation([...rotationRef.current]);
+      return;
+    }
+    let dvx = vx * SCALE, dvy = vy * SCALE;
+    let rafId;
+    const cancelCoast = () => {
+      cancelAnimationFrame(rafId);
+      cancelAnimRef.current = null;
+      isRotating.current = false;
+    };
+    const coast = () => {
+      dvx *= DAMPING; dvy *= DAMPING;
+      if (Math.hypot(dvx, dvy) < 0.01) {
+        isRotating.current = false;
+        setRotation([...rotationRef.current]);
+        cancelAnimRef.current = null;
+        return;
+      }
+      const [l, p] = rotationRef.current;
+      applyDragRotation([l + dvx, p - dvy]);
+      rafId = requestAnimationFrame(coast);
+    };
+    cancelAnimRef.current = cancelCoast;
+    rafId = requestAnimationFrame(coast);
+  }, [applyDragRotation]);
 
   // Scroll zoom + touch move (both need passive:false to call preventDefault)
   useEffect(() => {
@@ -378,6 +425,12 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
       const [l0, p0] = dragStart.current.rotation;
       applyDragRotation([l0 + dx * DRAG_SENSITIVITY, p0 - dy * DRAG_SENSITIVITY]);
+      // Track velocity samples for swipe momentum
+      const now = performance.now();
+      const SAMPLE_MS = 80;
+      touchSamplesRef.current.push({ x: t.clientX, y: t.clientY, t: now });
+      while (touchSamplesRef.current.length > 1 && now - touchSamplesRef.current[0].t > SAMPLE_MS)
+        touchSamplesRef.current.shift();
     };
     el.addEventListener("wheel", wheelHandler, { passive: false });
     el.addEventListener("touchmove", touchMoveHandler, { passive: false });
@@ -397,18 +450,23 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     () =>
       (countries?.features || [])
         .filter((f) => f.geometry != null)
-        .flatMap((feature) => {
+        .flatMap((feature, featureIdx) => {
           const { geometry, properties } = feature;
+          // CODE "-99" is a placeholder used by multiple territories — append the
+          // feature index to guarantee uniqueness while keeping real codes stable.
+          const baseKey = (properties.CODE && properties.CODE !== "-99")
+            ? properties.CODE
+            : `f${featureIdx}`;
           if (geometry.type === "MultiPolygon") {
             return geometry.coordinates.map((coords, polyIdx) => ({
               type: "Feature",
               geometry: { type: "Polygon", coordinates: coords },
               properties,
-              _key: `${properties.CODE}-poly${polyIdx}`,
+              _key: `${baseKey}-poly${polyIdx}`,
               _originalFeature: feature,
             }));
           }
-          return [{ ...feature, _key: properties.CODE }];
+          return [{ ...feature, _key: baseKey }];
         }),
     [countries]
   );
@@ -519,9 +577,13 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     clearHover();
     const entry = pathRefsRef.current[idx];
     if (entry) {
-      entry.el.setAttribute("stroke", "#333");
-      entry.el.setAttribute("stroke-width", "1.5");
-      hoveredElRef.current = entry.el;
+      const el = entry.el;
+      // Record next sibling so clearHover can restore the original draw order
+      el._nextSibling = el.nextSibling;
+      if (el.parentNode) el.parentNode.appendChild(el); // move to end → painted on top
+      el.setAttribute("stroke", "#333");
+      el.setAttribute("stroke-width", "1.5");
+      hoveredElRef.current = el;
     }
   }, [clearHover]);
 
