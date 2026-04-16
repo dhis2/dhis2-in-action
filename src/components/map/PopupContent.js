@@ -15,7 +15,7 @@ const PopupContent = ({ category, country, legend, setCountry, setCategory }) =>
 
   const countryData = data?.countriesAndStates[CODE];
   const focusItem = legend.find((l) => focus?.[CODE]?.[l.code]);
-  const countryFocus = focus[CODE]?.[focusItem?.code];
+  const countryFocus = focus?.[CODE]?.[focusItem?.code];
 
   const isExploreMode = legend.length > 0 && legend[0].code === "_";
 

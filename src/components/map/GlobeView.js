@@ -3,6 +3,7 @@ import React, {
   useState,
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
   useCallback,
 } from "react";
@@ -22,10 +23,11 @@ import GlobePopup from "./GlobePopup";
 import "./Map.css";
 
 const TOP_MARGIN = 10; // px gap between popup top and container edge
+const DRAG_SENSITIVITY = 0.4; // degrees of rotation per pixel dragged
+const ZOOM_CONTROLS_TOP = 88; // px from top of container (matches leaflet-left top + map margin)
 
-// Memoized path element — skips re-render when only hoveredIdx changes for
-// unrelated countries, saving ~750 closure allocations and React diffing per
-// hover event.
+// Memoized path element — hover styles are applied directly to the DOM so
+// hover never triggers a React re-render (avoids bumping imperative zoom).
 const CountryPath = React.memo(React.forwardRef(function CountryPath({
   d,
   fill,
@@ -70,12 +72,17 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   // Keep a ref to the latest rotation so callbacks can read it without stale closures
   const rotationRef = useRef(rotation);
   const [scale, setScale] = useState(1);
+  const scaleRef = useRef(scale);
+  const targetScaleRef = useRef(scale);
+  const scaleAnimRef = useRef(null);
+  // Rebuilt each render (like applyRotationRef) so closures are always fresh
+  const zoomRef = useRef(null);
 
   const dragStart = useRef(null);
   const isRotating = useRef(false); // true during both drag and coast
   const wasDrag = useRef(false);
   const cancelAnimRef = useRef(null);
-  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const hoveredElRef = useRef(null); // DOM element currently highlighted
 
   // Refs for direct DOM manipulation during drag (bypass React re-renders)
   const graticuleRef = useRef(null);
@@ -84,11 +91,12 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   const popupRef = useRef(null);
   const popupSizeRef = useRef({ width: 0, height: 0 });
   const popupAnchorRef = useRef(null); // { lng, lat } kept in sync with popup state
+  const globeCircleRef = useRef(null); // imperative update during zoom animation
   // Updated each render so the drag handler always has the latest pathGenerator/graticule
   const applyRotationRef = useRef(null);
 
   const legend = useMemo(
-    () => categories.find((c) => c.id === category).legend,
+    () => (categories.find((c) => c.id === category) || categories[0]).legend,
     [category]
   );
 
@@ -113,13 +121,19 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     return () => ro.disconnect();
   }, []);
 
-  // Cancel any pending popup-close timer or animation on unmount
+  // Cancel any pending timers or animations on unmount
   useEffect(() => () => {
     clearTimeout(closeTimerRef.current);
     if (cancelAnimRef.current) cancelAnimRef.current();
+    if (scaleAnimRef.current) cancelAnimationFrame(scaleAnimRef.current);
   }, []);
 
-  rotationRef.current = rotation;
+  // Only sync refs from state when not mid-animation/drag.
+  // During drag or zoom animation, the refs hold the imperative (current)
+  // values; overwriting them from stale state would cause a snap-back on any
+  // re-render that fires mid-flight (e.g. popup resize, data load).
+  if (!isRotating.current) rotationRef.current = rotation;
+  if (!isRotating.current && !scaleAnimRef.current) scaleRef.current = scale;
 
   const { width, height } = dimensions;
   const baseRadius = Math.min(width, height) / 2 - 10;
@@ -137,8 +151,14 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       .clipAngle(90);
   }, [width, height, radius]);
 
-  // Mutate projection with current rotation before any path generation below.
-  if (projection) projection.rotate(rotation);
+  // Mutate projection with the latest rotation and scale before any path
+  // generation below. Use refs (not state) so any React re-render that fires
+  // mid-drag or mid-zoom-animation uses the current imperative values, not the
+  // stale state — preventing paths from snapping back on re-render.
+  if (projection) {
+    projection.rotate(rotationRef.current);
+    projection.scale(baseRadius * scaleRef.current);
+  }
 
   const pathGenerator = useMemo(
     () => (projection ? geoPath(projection) : null),
@@ -201,13 +221,28 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     if (applyRotationRef.current) applyRotationRef.current(rot);
   }, []);
 
+  const clearHover = useCallback(() => {
+    if (hoveredElRef.current) {
+      hoveredElRef.current.setAttribute("stroke", "#555");
+      hoveredElRef.current.setAttribute("stroke-width", "1");
+      hoveredElRef.current = null;
+    }
+  }, []);
+
   // Drag — mousemove/mouseup are attached to window so dragging continues
   // even when the cursor leaves the viewport. Releases with momentum.
   const onMouseDown = useCallback((e) => {
     e.preventDefault();
     if (cancelAnimRef.current) cancelAnimRef.current();
+    if (scaleAnimRef.current) {
+      cancelAnimationFrame(scaleAnimRef.current);
+      scaleAnimRef.current = null;
+      targetScaleRef.current = scaleRef.current;
+      setScale(scaleRef.current); // commit animated scale to state before drag
+    }
     dragStart.current = { x: e.clientX, y: e.clientY, rotation: rotationRef.current };
     isRotating.current = true;
+    clearHover();
 
     // Keep a small ring buffer of recent pointer positions to derive release velocity
     const SAMPLE_MS = 80;
@@ -218,7 +253,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       const dy = e.clientY - dragStart.current.y;
       if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
       const [l0, p0] = dragStart.current.rotation;
-      applyDragRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
+      applyDragRotation([l0 + dx * DRAG_SENSITIVITY, p0 - dy * DRAG_SENSITIVITY]);
 
       const now = performance.now();
       samples.push({ x: e.clientX, y: e.clientY, t: now });
@@ -241,9 +276,10 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       const vx = (newest.x - oldest.x) / dt;
       const vy = (newest.y - oldest.y) / dt;
 
-      // Convert px/ms velocity to rotation/frame and coast to a stop
+      // Convert px/ms velocity to rotation/frame and coast to a stop.
+      // SCALE converts px/ms → degrees/frame: sensitivity × assumed frame Δt (ms).
       const DAMPING = 0.85;
-      const SCALE = 0.4 * 16; // match drag sensitivity × ~16ms/frame
+      const SCALE = DRAG_SENSITIVITY * 16; // degrees/frame at 60fps
       const COAST_THRESHOLD_PX = 10;
       if (Math.hypot(newest.x - oldest.x, newest.y - oldest.y) < COAST_THRESHOLD_PX) {
         isRotating.current = false;
@@ -252,6 +288,11 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       }
       let dvx = vx * SCALE, dvy = vy * SCALE;
       let rafId;
+      const cancelCoast = () => {
+        cancelAnimationFrame(rafId);
+        cancelAnimRef.current = null;
+        isRotating.current = false;
+      };
       const coast = () => {
         dvx *= DAMPING; dvy *= DAMPING;
         if (Math.hypot(dvx, dvy) < 0.01) {
@@ -264,22 +305,40 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         applyDragRotation([l + dvx, p - dvy]);
         rafId = requestAnimationFrame(coast);
       };
-      cancelAnimRef.current = () => { cancelAnimationFrame(rafId); cancelAnimRef.current = null; isRotating.current = false; };
+      cancelAnimRef.current = cancelCoast;
       rafId = requestAnimationFrame(coast);
     };
 
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-  }, [applyDragRotation]);
+  }, [applyDragRotation, clearHover]);
 
-  // Touch drag — mirrors mouse drag for single-finger rotation
+  // Tracks the initial distance between two fingers for pinch-to-zoom
+  const pinchStartRef = useRef(null); // { dist, scale }
+
+  // Touch drag (1 finger) + pinch-to-zoom (2 fingers)
   const onTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      // Begin pinch — cancel any active drag so the two gestures don't fight
+      dragStart.current = null;
+      isRotating.current = true;
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      pinchStartRef.current = { dist: Math.hypot(dx, dy), scale: scale };
+      return;
+    }
     if (e.touches.length !== 1) return;
+    pinchStartRef.current = null;
     const t = e.touches[0];
     dragStart.current = { x: t.clientX, y: t.clientY, rotation: rotationRef.current };
-  }, []);
+  }, [scale]);
 
   const onTouchEnd = useCallback(() => {
+    if (pinchStartRef.current) {
+      pinchStartRef.current = null;
+      isRotating.current = false;
+      setScale(scaleRef.current); // sync React state after imperative pinch
+    }
     if (!dragStart.current) return;
     dragStart.current = null;
     setRotation([...rotationRef.current]);
@@ -291,17 +350,34 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     if (!el) return;
     const wheelHandler = (e) => {
       e.preventDefault();
-      setScale((s) => Math.max(0.4, Math.min(8, s - e.deltaY * 0.001)));
+      targetScaleRef.current = Math.max(0.4, Math.min(8, targetScaleRef.current - e.deltaY * 0.001));
+      if (zoomRef.current) {
+        zoomRef.current.startZoom();
+        if (!scaleAnimRef.current) {
+          scaleAnimRef.current = requestAnimationFrame(zoomRef.current.animateZoom);
+        }
+      }
     };
     const touchMoveHandler = (e) => {
-      if (!dragStart.current || e.touches.length !== 1) return;
       e.preventDefault();
+      // Two-finger pinch-to-zoom
+      if (e.touches.length === 2 && pinchStartRef.current) {
+        const dx = e.touches[1].clientX - e.touches[0].clientX;
+        const dy = e.touches[1].clientY - e.touches[0].clientY;
+        const dist = Math.hypot(dx, dy);
+        const next = Math.max(0.4, Math.min(8, pinchStartRef.current.scale * (dist / pinchStartRef.current.dist)));
+        targetScaleRef.current = next;
+        if (zoomRef.current) zoomRef.current.applyScale(next);
+        return;
+      }
+      // Single-finger drag
+      if (!dragStart.current || e.touches.length !== 1) return;
       const t = e.touches[0];
       const dx = t.clientX - dragStart.current.x;
       const dy = t.clientY - dragStart.current.y;
       if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
       const [l0, p0] = dragStart.current.rotation;
-      applyDragRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
+      applyDragRotation([l0 + dx * DRAG_SENSITIVITY, p0 - dy * DRAG_SENSITIVITY]);
     };
     el.addEventListener("wheel", wheelHandler, { passive: false });
     el.addEventListener("touchmove", touchMoveHandler, { passive: false });
@@ -311,7 +387,12 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     };
   }, [applyDragRotation]);
 
-  // Flatten MultiPolygon features
+  // Flatten MultiPolygon features into individual Polygons.
+  // _key provides a stable React key per sub-polygon (CODE + index within the
+  // original MultiPolygon's coordinate array) so that reordering countries in
+  // the source data doesn't cause React to remount wrong elements (C-2).
+  // _originalFeature retains the full multi-polygon so popup centroid is
+  // computed from the whole country, not just the clicked sub-polygon (m-10).
   const features = useMemo(
     () =>
       (countries?.features || [])
@@ -319,13 +400,15 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         .flatMap((feature) => {
           const { geometry, properties } = feature;
           if (geometry.type === "MultiPolygon") {
-            return geometry.coordinates.map((coords) => ({
+            return geometry.coordinates.map((coords, polyIdx) => ({
               type: "Feature",
               geometry: { type: "Polygon", coordinates: coords },
               properties,
+              _key: `${properties.CODE}-poly${polyIdx}`,
+              _originalFeature: feature,
             }));
           }
-          return [feature];
+          return [{ ...feature, _key: properties.CODE }];
         }),
     [countries]
   );
@@ -345,16 +428,18 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
 
   // Pre-compute which features should be hidden (area > threshold) so the
   // check is O(1) per feature during render instead of a d3-geo calculation.
-  // Keyed on features + radius since the threshold depends on radius.
+  // Uses spherical area (steradians, rotation-independent) rather than
+  // projected area so the set doesn't go stale when the globe is rotated (C-3).
+  // The threshold (1.5 sr ≈ 12% of the full sphere) is well above any real
+  // country (Russia ≈ 0.24 sr) and catches only back-face clipping artifacts.
   const oversizedSet = useMemo(() => {
-    if (!pathGenerator) return new Set();
-    const threshold = 0.4 * Math.PI * radius * radius;
+    const LARGE_AREA_SR = 1.5;
     const set = new Set();
     features.forEach((f, i) => {
-      if (pathGenerator.area(f) > threshold) set.add(i);
+      if (geoArea(f) > LARGE_AREA_SR) set.add(i);
     });
     return set;
-  }, [features, radius, pathGenerator]);
+  }, [features]);
 
   // Countries with focus data that have at least one matching legend entry
   const focusIcons = useMemo(() => {
@@ -364,18 +449,30 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         const code = f.properties.CODE;
         return focus[code] && legend.some((l) => focus[code][l.code]);
       })
-      .map((f) => {
-        const [lng, lat] = getIconPosition(f.geometry);
-        return { properties: f.properties, lng, lat, feature: f };
+      .flatMap((f) => {
+        try {
+          const [lng, lat] = getIconPosition(f.geometry);
+          return [{ properties: f.properties, lng, lat, feature: f }];
+        } catch {
+          // Skip features with degenerate geometry (e.g. < 3 coordinates)
+          return [];
+        }
       });
   }, [focus, legend, countries]);
 
   const doOpenPopup = useCallback(
     (feature) => {
-      const [lng, lat] = geoCentroid(feature);
+      // For exploded MultiPolygon sub-features, compute centroid from the
+      // original (full) feature so the popup anchor is the country's true
+      // centre, not the centroid of a single island or province (m-10).
+      const anchorFeature = feature._originalFeature || feature;
+      const [lng, lat] = geoCentroid(anchorFeature);
       hasTilted.current = false;
       setPopupHeight(0);
       setPopupClosing(false);
+      // Clear any highlighted row in the country table. Must be called before
+      // setPopup so that the selected→useEffect at L445 fires with null and
+      // doesn't re-trigger an animation after the popup is already open (C-1).
       setCountry();
       setPopup({ properties: feature.properties, lng, lat });
     },
@@ -405,14 +502,32 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     }, 150);
   }, []);
 
+  // Shadow popup in a ref so the category-change effect below can read whether
+  // a popup is open without listing popup as a dep (which would re-run the
+  // effect on every popup open/close, not just category changes) (M-3).
+  const popupStateRef = useRef(popup);
+  popupStateRef.current = popup;
+
   // Keep a ref to openPopup so handleClick never needs to change identity
   // when popup state changes, preserving CountryPath memo across popup open/close.
   const openPopupRef = useRef(openPopup);
   openPopupRef.current = openPopup;
 
   // Stable handlers passed to CountryPath so memo can skip re-renders (#6)
-  const handleEnter = useCallback((idx) => { if (!isRotating.current) setHoveredIdx(idx); }, []);
-  const handleLeave = useCallback(() => { if (!isRotating.current) setHoveredIdx(null); }, []);
+  const handleEnter = useCallback((idx) => {
+    if (isRotating.current) return;
+    clearHover();
+    const entry = pathRefsRef.current[idx];
+    if (entry) {
+      entry.el.setAttribute("stroke", "#333");
+      entry.el.setAttribute("stroke-width", "1.5");
+      hoveredElRef.current = entry.el;
+    }
+  }, [clearHover]);
+
+  const handleLeave = useCallback(() => {
+    if (!isRotating.current) clearHover();
+  }, [clearHover]);
   const handleClick = useCallback(
     (idx) => {
       if (wasDrag.current) { wasDrag.current = false; return; }
@@ -423,9 +538,11 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
 
   // When the category changes while a popup is open, the popup height may change —
   // reset hasTilted so the tilt check runs again with the new dimensions.
+  // popupStateRef (not popup) is read here so this effect only fires on category
+  // changes, not on every popup open/close.
   useEffect(() => {
-    if (popup) hasTilted.current = false;
-  }, [category]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (popupStateRef.current) hasTilted.current = false;
+  }, [category]);
 
   // Once the popup has measured its real height, tilt the globe if the popup
   // would be clipped at the top of the container.
@@ -480,12 +597,56 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   // Keep popup anchor ref in sync so the drag loop can access it without stale closures
   popupAnchorRef.current = popup ? { lng: popup.lng, lat: popup.lat } : null;
 
-  // Rebuild the drag DOM-update function each render so it closes over the
-  // latest pathGenerator and graticule (changes on scale/resize, not on drag).
-  if (pathGenerator) {
+  // Rebuild zoom helpers each render so closures always capture the latest
+  // projection and baseRadius (same pattern as applyRotationRef).
+  // During animation setScale is NOT called, so projection stays stable —
+  // only called once when the scale settles to sync React state.
+  if (projection) {
+    const applyScale = (s) => {
+      scaleRef.current = s;
+      projection.scale(baseRadius * s);
+      if (applyRotationRef.current) applyRotationRef.current(rotationRef.current);
+    };
+    const animateZoom = () => {
+      const next = scaleRef.current + (targetScaleRef.current - scaleRef.current) * 0.15;
+      const settled = Math.abs(next - targetScaleRef.current) < 0.001;
+      applyScale(settled ? targetScaleRef.current : next);
+      if (settled) {
+        scaleAnimRef.current = null;
+        isRotating.current = false;
+        setScale(targetScaleRef.current);
+      } else {
+        scaleAnimRef.current = requestAnimationFrame(zoomRef.current.animateZoom);
+      }
+    };
+    const startZoom = () => {
+      isRotating.current = true;
+      clearHover();
+    };
+    zoomRef.current = { applyScale, animateZoom, startZoom };
+  }
+
+  // Pre-compute the static graticule path — only changes when the projection
+  // scale/size changes, never on rotation (m-12).
+  const graticulePath = useMemo(
+    () => (pathGenerator ? pathGenerator(graticule) : ""),
+    [pathGenerator, graticule]
+  );
+
+  // Rebuild the drag DOM-update function after every render (useLayoutEffect
+  // ensures it is set before the browser paints, avoiding a race with
+  // in-flight RAF callbacks in concurrent mode) (M-1).
+  useLayoutEffect(() => {
+    if (!pathGenerator) return;
     applyRotationRef.current = (rot) => {
       projection.rotate(rot);
       rotationRef.current = rot;
+
+      // Globe circle radius — updated here so a single applyRotationRef call
+      // resyncs the entire DOM (circle, graticule, paths, icons, popup).
+      if (globeCircleRef.current) {
+        globeCircleRef.current.setAttribute("r", projection.scale());
+      }
 
       // Graticule
       if (graticuleRef.current) {
@@ -541,29 +702,43 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         }
       }
     };
-  }
 
-  if (!width || !pathGenerator) {
+    // Resync the entire DOM with the current projection state after every
+    // React render. Any render during drag or zoom animation may have reset
+    // DOM attributes (graticule d, circle r, path d) to stale React-state
+    // values. This corrects everything before the browser paints.
+    applyRotationRef.current(rotationRef.current);
+  }); // end useLayoutEffect
+
+  if (!width || !height || !pathGenerator) {
     return <div ref={containerRef} className="Map" />;
   }
 
   return (
     <div ref={containerRef} className="Map" style={{ cursor: "grab" }}>
-      <div style={{ position: "absolute", right: 10, top: 88, zIndex: 1000 }}>
+      <div style={{ position: "absolute", right: 10, top: ZOOM_CONTROLS_TOP, zIndex: 1000 }}>
         <div className="leaflet-control-zoom leaflet-bar leaflet-control">
           {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <a
             className="leaflet-control-zoom-in"
             role="button"
+            tabIndex={0}
             aria-label="Zoom in"
-            onClick={() => setScale((s) => Math.min(8, s + 0.3))}
+            onClick={() => {
+              targetScaleRef.current = Math.min(8, targetScaleRef.current + 0.3);
+              if (zoomRef.current) { zoomRef.current.startZoom(); if (!scaleAnimRef.current) scaleAnimRef.current = requestAnimationFrame(zoomRef.current.animateZoom); }
+            }}
           >+</a>
           {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <a
             className="leaflet-control-zoom-out"
             role="button"
+            tabIndex={0}
             aria-label="Zoom out"
-            onClick={() => setScale((s) => Math.max(0.4, s - 0.3))}
+            onClick={() => {
+              targetScaleRef.current = Math.max(0.4, targetScaleRef.current - 0.3);
+              if (zoomRef.current) { zoomRef.current.startZoom(); if (!scaleAnimRef.current) scaleAnimRef.current = requestAnimationFrame(zoomRef.current.animateZoom); }
+            }}
           >−</a>
         </div>
       </div>
@@ -574,18 +749,20 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
       >
         <circle
           cx={width / 2}
           cy={height / 2}
           r={radius}
+          ref={globeCircleRef}
           fill="#edf7ff"
           stroke="#aaa"
           strokeWidth={0.5}
         />
         <path
           ref={graticuleRef}
-          d={pathGenerator(graticule)}
+          d={graticulePath}
           fill="none"
           stroke="#ccc"
           strokeWidth={0.4}
@@ -593,15 +770,14 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         {features.map((feature, i) => {
           if (oversizedSet.has(i)) return null;
           const d = pathGenerator(feature);
-          const isHovered = i === hoveredIdx;
           return (
             <CountryPath
               ref={(el) => { pathRefsRef.current[i] = el ? { el, feature } : null; }}
-              key={`${feature.properties.CODE}-${i}`}
+              key={feature._key}
               d={d || ""}
               fill={colorMap[feature.properties.CODE] || "#fff"}
-              strokeColor={isHovered ? "#333" : "#555"}
-              strokeWidth={isHovered ? 1.5 : 1}
+              strokeColor="#555"
+              strokeWidth={1}
               idx={i}
               onEnter={handleEnter}
               onLeave={handleLeave}
@@ -610,22 +786,23 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
             />
           );
         })}
-        {/* Focus info icons */}
+        {/* Focus info icons — always rendered so iconRefsRef is always
+            populated and the drag loop can imperatively show/hide them.
+            Visibility is controlled via display style, never via return null. */}
         {focusIcons.map(({ properties, lng, lat, feature }, i) => {
-          const svgPos = projection([lng, lat]);
-          if (!svgPos) return null;
           const visibleCenter = [-rotation[0], -rotation[1]];
-          if (geoDistance([lng, lat], visibleCenter) > Math.PI / 2) return null;
+          const hidden = geoDistance([lng, lat], visibleCenter) > Math.PI / 2;
+          const svgPos = hidden ? null : projection([lng, lat]);
           return (
             <image
               ref={(el) => { iconRefsRef.current[i] = el ? { el, lng, lat } : null; }}
               key={`icon-${properties.CODE}`}
               href="icon-info-48.png"
-              x={svgPos[0] - 10}
-              y={svgPos[1] - 10}
+              x={svgPos ? svgPos[0] - 10 : -100}
+              y={svgPos ? svgPos[1] - 10 : -100}
               width={20}
               height={20}
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", display: hidden ? "none" : "" }}
               onClick={(e) => {
                 e.stopPropagation();
                 if (wasDrag.current) { wasDrag.current = false; return; }

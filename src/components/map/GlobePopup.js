@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, forwardRef } from "react";
+import React, { useRef, useState, useEffect, forwardRef } from "react";
 import PopupContent from "./PopupContent";
 
 const GlobePopup = forwardRef(function GlobePopup({
@@ -26,19 +26,15 @@ const GlobePopup = forwardRef(function GlobePopup({
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => {
-      const rect = el.getBoundingClientRect();
-      const next = { width: rect.width, height: rect.height };
-      setSize(next);
-      if (onSizeChangeRef.current) onSizeChangeRef.current(next.width, next.height);
+    // Use entry.contentRect to avoid triggering a layout reflow (M-6)
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
+      if (onSizeChangeRef.current) onSizeChangeRef.current(width, height);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-
-  const onCloseClick = useCallback(() => {
-    onClose();
-  }, [onClose]);
 
   return (
     <div
@@ -77,7 +73,7 @@ const GlobePopup = forwardRef(function GlobePopup({
           className="leaflet-popup-close-button"
           role="button"
           aria-label="Close popup"
-          onClick={onCloseClick}
+          onClick={onClose}
         >
           ×
         </a>

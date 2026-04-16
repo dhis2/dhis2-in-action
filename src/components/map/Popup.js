@@ -1,10 +1,8 @@
-import React, { useContext, useCallback, useEffect } from "react";
+import React, { useContext, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { popup } from "leaflet";
 import PopupContent from "./PopupContent";
 import { MapContext } from "./MapProvider";
-
-const container = document.createElement("div");
 
 const Popup = ({
   latlng,
@@ -16,6 +14,10 @@ const Popup = ({
   onClose,
 }) => {
   const map = useContext(MapContext);
+  // Create the portal container lazily in a ref so each Popup instance owns
+  // its own DOM node — safe under concurrent React (M-8).
+  const containerRef = useRef(null);
+  if (!containerRef.current) containerRef.current = document.createElement("div");
 
   const onPopupOpen = useCallback(
     () => document.body.classList.add("popupopen"),
@@ -35,7 +37,7 @@ const Popup = ({
 
     popup({ maxWidth, maxHeight })
       .setLatLng(latlng)
-      .setContent(container)
+      .setContent(containerRef.current)
       .openOn(map);
   }, [map, latlng, category]);
 
@@ -60,7 +62,7 @@ const Popup = ({
       setCountry={setCountry}
       setCategory={setCategory}
     />,
-    container
+    containerRef.current
   );
 };
 

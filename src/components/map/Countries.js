@@ -115,7 +115,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
   }, [layer, onClick]);
 
   useEffect(() => {
-    if (selected) {
+    if (selected && layer) {
       const selectedLayer = layer
         .getLayers()
         .find((l) => l.feature.properties.NAME === selected);
