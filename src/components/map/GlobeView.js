@@ -374,13 +374,13 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     const [lng, lat] = geoCentroid(feature);
     const target = [-lng, -lat];
 
+    setPopup(null);
+    setPopupClosing(false);
+
     return animateToRotation(target, 400, () => {
-      hasTilted.current = true; // already centred — no tilt needed
-      setPopupHeight(0);
-      setPopupClosing(false);
-      setPopup({ properties: feature.properties, lng, lat });
+      doOpenPopup(feature);
     });
-  }, [selected, features, animateToRotation]);
+  }, [selected, features, animateToRotation, doOpenPopup]);
 
   // Re-project popup anchor to screen coords on every render.
   // Returns null if the anchor is behind the horizon → hides the popup.

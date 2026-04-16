@@ -50,6 +50,7 @@ const GlobePopup = ({
         zIndex: 2000,
         overflow: "visible",
         background: "none",
+        visibility: size.height === 0 ? "hidden" : "visible",
       }}
     >
       <div className="leaflet-popup leaflet-zoom-animated">
