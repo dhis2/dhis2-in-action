@@ -26,29 +26,32 @@ const TOP_MARGIN = 10; // px gap between popup top and container edge
 // Memoized path element — skips re-render when only hoveredIdx changes for
 // unrelated countries, saving ~750 closure allocations and React diffing per
 // hover event.
-const CountryPath = React.memo(function CountryPath({
+const CountryPath = React.memo(React.forwardRef(function CountryPath({
   d,
   fill,
   strokeColor,
   strokeWidth,
+  style,
   idx,
   onEnter,
   onLeave,
   onClick,
-}) {
+}, ref) {
   return (
     <path
+      ref={ref}
       className="globe-country"
       d={d}
       fill={fill}
       stroke={strokeColor}
       strokeWidth={strokeWidth}
+      style={style}
       onMouseEnter={() => onEnter(idx)}
       onMouseLeave={onLeave}
       onClick={() => onClick(idx)}
     />
   );
-});
+}));
 
 const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   const countries = useContext(CountriesContext);
@@ -72,6 +75,16 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   const wasDrag = useRef(false);
   const cancelAnimRef = useRef(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  // Refs for direct DOM manipulation during drag (bypass React re-renders)
+  const graticuleRef = useRef(null);
+  const pathRefsRef = useRef([]); // sparse array of { el, feature } indexed by feature index
+  const iconRefsRef = useRef([]); // array of { el, lng, lat }
+  const popupRef = useRef(null);
+  const popupSizeRef = useRef({ width: 0, height: 0 });
+  const popupAnchorRef = useRef(null); // { lng, lat } kept in sync with popup state
+  // Updated each render so the drag handler always has the latest pathGenerator/graticule
+  const applyRotationRef = useRef(null);
 
   const legend = useMemo(
     () => categories.find((c) => c.id === category).legend,
@@ -181,24 +194,36 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     [height, radius]
   );
 
-  // Drag — reads rotation from ref so this callback is stable across frames (#5)
+  // Applies a rotation directly to the DOM without triggering a React re-render.
+  // Called on every drag frame; setRotation is called once on mouseup to sync state.
+  const applyDragRotation = useCallback((rot) => {
+    if (applyRotationRef.current) applyRotationRef.current(rot);
+  }, []);
+
+  // Drag — mousemove/mouseup are attached to window so dragging continues
+  // even when the cursor leaves the viewport.
   const onMouseDown = useCallback((e) => {
     e.preventDefault();
     dragStart.current = { x: e.clientX, y: e.clientY, rotation: rotationRef.current };
-  }, []);
 
-  const onMouseMove = useCallback((e) => {
-    if (!dragStart.current) return;
-    const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
-    if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
-    const [l0, p0] = dragStart.current.rotation;
-    setRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
-  }, []);
+    const onMove = (e) => {
+      const dx = e.clientX - dragStart.current.x;
+      const dy = e.clientY - dragStart.current.y;
+      if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
+      const [l0, p0] = dragStart.current.rotation;
+      applyDragRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
+    };
 
-  const onMouseUp = useCallback(() => {
-    dragStart.current = null;
-  }, []);
+    const onUp = () => {
+      dragStart.current = null;
+      setRotation([...rotationRef.current]);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [applyDragRotation]);
 
   // Touch drag — mirrors mouse drag for single-finger rotation
   const onTouchStart = useCallback((e) => {
@@ -208,7 +233,9 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   }, []);
 
   const onTouchEnd = useCallback(() => {
+    if (!dragStart.current) return;
     dragStart.current = null;
+    setRotation([...rotationRef.current]);
   }, []);
 
   // Scroll zoom + touch move (both need passive:false to call preventDefault)
@@ -227,7 +254,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       const dy = t.clientY - dragStart.current.y;
       if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
       const [l0, p0] = dragStart.current.rotation;
-      setRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
+      applyDragRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
     };
     el.addEventListener("wheel", wheelHandler, { passive: false });
     el.addEventListener("touchmove", touchMoveHandler, { passive: false });
@@ -235,7 +262,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       el.removeEventListener("wheel", wheelHandler);
       el.removeEventListener("touchmove", touchMoveHandler);
     };
-  }, []);
+  }, [applyDragRotation]);
 
   // Flatten MultiPolygon features
   const features = useMemo(
@@ -337,8 +364,8 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   openPopupRef.current = openPopup;
 
   // Stable handlers passed to CountryPath so memo can skip re-renders (#6)
-  const handleEnter = useCallback((idx) => setHoveredIdx(idx), []);
-  const handleLeave = useCallback(() => setHoveredIdx(null), []);
+  const handleEnter = useCallback((idx) => { if (!dragStart.current) setHoveredIdx(idx); }, []);
+  const handleLeave = useCallback(() => { if (!dragStart.current) setHoveredIdx(null); }, []);
   const handleClick = useCallback(
     (idx) => {
       if (wasDrag.current) { wasDrag.current = false; return; }
@@ -397,6 +424,72 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     return { x: rect.left + svgPos[0], y: rect.top + svgPos[1] };
   }, [popup, projection, rotation]);
 
+  // Keep popup anchor ref in sync so the drag loop can access it without stale closures
+  popupAnchorRef.current = popup ? { lng: popup.lng, lat: popup.lat } : null;
+
+  // Rebuild the drag DOM-update function each render so it closes over the
+  // latest pathGenerator and graticule (changes on scale/resize, not on drag).
+  if (pathGenerator) {
+    applyRotationRef.current = (rot) => {
+      projection.rotate(rot);
+      rotationRef.current = rot;
+
+      // Graticule
+      if (graticuleRef.current) {
+        const d = pathGenerator(graticule);
+        if (d) graticuleRef.current.setAttribute("d", d);
+      }
+
+      // Country paths
+      pathRefsRef.current.forEach((entry) => {
+        if (!entry) return;
+        const { el, feature } = entry;
+        const d = pathGenerator(feature);
+        if (d) {
+          el.setAttribute("d", d);
+          el.style.display = "";
+        } else {
+          el.style.display = "none";
+        }
+      });
+
+      // Focus icons
+      const visibleCenter = [-rot[0], -rot[1]];
+      iconRefsRef.current.forEach((entry) => {
+        if (!entry) return;
+        const { el, lng, lat } = entry;
+        if (geoDistance([lng, lat], visibleCenter) > Math.PI / 2) {
+          el.style.display = "none";
+          return;
+        }
+        const svgPos = projection([lng, lat]);
+        if (!svgPos) { el.style.display = "none"; return; }
+        el.setAttribute("x", svgPos[0] - 10);
+        el.setAttribute("y", svgPos[1] - 10);
+        el.style.display = "";
+      });
+
+      // Popup
+      const anchor = popupAnchorRef.current;
+      if (popupRef.current && anchor) {
+        if (geoDistance([anchor.lng, anchor.lat], visibleCenter) > Math.PI / 2) {
+          popupRef.current.style.visibility = "hidden";
+        } else {
+          const svgPos = projection([anchor.lng, anchor.lat]);
+          if (svgPos && containerRectRef.current) {
+            const rect = containerRectRef.current;
+            const sx = rect.left + svgPos[0];
+            const sy = rect.top + svgPos[1];
+            const { width: pw, height: ph } = popupSizeRef.current;
+            popupRef.current.style.left = `${sx - pw / 2 - 22}px`;
+            popupRef.current.style.top = `${sy - ph - 36}px`;
+            if (ph > 0) popupRef.current.style.visibility = "visible";
+          }
+        }
+      }
+    };
+  }
+
   if (!width || !pathGenerator) {
     return <div ref={containerRef} className="Map" />;
   }
@@ -426,9 +519,6 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         height={height}
         style={{ touchAction: "none" }}
         onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -441,58 +531,41 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
           strokeWidth={0.5}
         />
         <path
+          ref={graticuleRef}
           d={pathGenerator(graticule)}
           fill="none"
           stroke="#ccc"
           strokeWidth={0.4}
         />
         {features.map((feature, i) => {
-          if (i === hoveredIdx) return null; // rendered last, on top
           if (oversizedSet.has(i)) return null;
           const d = pathGenerator(feature);
-          if (!d) return null;
+          const isHovered = i === hoveredIdx;
           return (
             <CountryPath
+              ref={(el) => { pathRefsRef.current[i] = el ? { el, feature } : null; }}
               key={`${feature.properties.CODE}-${i}`}
-              d={d}
+              d={d || ""}
               fill={colorMap[feature.properties.CODE] || "#fff"}
-              strokeColor="#555"
-              strokeWidth={1}
+              strokeColor={isHovered ? "#333" : "#555"}
+              strokeWidth={isHovered ? 1.5 : 1}
               idx={i}
               onEnter={handleEnter}
               onLeave={handleLeave}
               onClick={handleClick}
+              style={d ? undefined : { display: "none" }}
             />
           );
         })}
-        {/* Hovered country rendered last so its stroke is never occluded */}
-        {hoveredIdx !== null && (() => {
-          const feature = features[hoveredIdx];
-          if (!feature) return null;
-          const d = pathGenerator(feature);
-          if (!d) return null;
-          return (
-            <CountryPath
-              key={`${feature.properties.CODE}-${hoveredIdx}-top`}
-              d={d}
-              fill={colorMap[feature.properties.CODE] || "#fff"}
-              strokeColor="#333"
-              strokeWidth={1.5}
-              idx={hoveredIdx}
-              onEnter={handleEnter}
-              onLeave={handleLeave}
-              onClick={handleClick}
-            />
-          );
-        })()}
         {/* Focus info icons */}
-        {focusIcons.map(({ properties, lng, lat, feature }) => {
+        {focusIcons.map(({ properties, lng, lat, feature }, i) => {
           const svgPos = projection([lng, lat]);
           if (!svgPos) return null;
           const visibleCenter = [-rotation[0], -rotation[1]];
           if (geoDistance([lng, lat], visibleCenter) > Math.PI / 2) return null;
           return (
             <image
+              ref={(el) => { iconRefsRef.current[i] = el ? { el, lng, lat } : null; }}
               key={`icon-${properties.CODE}`}
               href="icon-info-48.png"
               x={svgPos[0] - 10}
@@ -512,6 +585,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
 
       {popup && popupScreenPos && (
         <GlobePopup
+          ref={popupRef}
           x={popupScreenPos.x}
           y={popupScreenPos.y}
           closing={popupClosing}
@@ -520,7 +594,10 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
           legend={legend}
           setCountry={setCountry}
           setCategory={setCategory}
-          onHeightChange={setPopupHeight}
+          onSizeChange={(w, h) => {
+            popupSizeRef.current = { width: w, height: h };
+            setPopupHeight(h + 36);
+          }}
           onClose={closePopup}
         />
       )}

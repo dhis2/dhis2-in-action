@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, forwardRef } from "react";
 import PopupContent from "./PopupContent";
 
-const GlobePopup = ({
+const GlobePopup = forwardRef(function GlobePopup({
   x,
   y,
   closing,
@@ -11,16 +11,16 @@ const GlobePopup = ({
   setCountry,
   setCategory,
   onClose,
-  onHeightChange,
-}) => {
+  onSizeChange,
+}, outerRef) {
   const contentRef = useRef(null);
-  const onHeightChangeRef = useRef(onHeightChange);
+  const onSizeChangeRef = useRef(onSizeChange);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   // Keep ref in sync so the ResizeObserver always calls the latest callback
   // without needing to re-register the observer on every render.
   useEffect(() => {
-    onHeightChangeRef.current = onHeightChange;
+    onSizeChangeRef.current = onSizeChange;
   });
 
   useEffect(() => {
@@ -28,8 +28,9 @@ const GlobePopup = ({
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const rect = el.getBoundingClientRect();
-      setSize({ width: rect.width, height: rect.height });
-      if (onHeightChangeRef.current) onHeightChangeRef.current(rect.height + 36);
+      const next = { width: rect.width, height: rect.height };
+      setSize(next);
+      if (onSizeChangeRef.current) onSizeChangeRef.current(next.width, next.height);
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -41,6 +42,7 @@ const GlobePopup = ({
 
   return (
     <div
+      ref={outerRef}
       className={`leaflet-container ${closing ? "globe-popup-exit" : "globe-popup-enter"}`}
       style={{
         position: "fixed",
@@ -82,6 +84,6 @@ const GlobePopup = ({
       </div>
     </div>
   );
-};
+});
 
 export default GlobePopup;
