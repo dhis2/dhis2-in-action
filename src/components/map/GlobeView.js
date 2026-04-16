@@ -63,7 +63,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     dataContext?.[legacyCategories.includes(category) ? "legacy" : "current"];
 
   const containerRef = useRef();
-  // Cache the container's bounding rect so popupScreenPos never forces a
+  // Cache the container's bounding rect so popup positioning never forces a
   // layout reflow — updated only on resize (the only time it actually changes).
   const containerRectRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -82,7 +82,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   const isRotating = useRef(false); // true during both drag and coast
   const wasDrag = useRef(false);
   const cancelAnimRef = useRef(null);
-  const hoveredElRef = useRef(null); // DOM element currently highlighted
+  const hoveredElsRef = useRef([]); // DOM elements currently highlighted (all polygons of a country)
 
   // Refs for direct DOM manipulation during drag (bypass React re-renders)
   const graticuleRef = useRef(null);
@@ -91,6 +91,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   const popupRef = useRef(null);
   const popupSizeRef = useRef({ width: 0, height: 0 });
   const popupAnchorRef = useRef(null); // { lng, lat } kept in sync with popup state
+  const popupReadyRef = useRef(false); // true once tilt animation (or no-tilt) is done
   const globeCircleRef = useRef(null); // imperative update during zoom animation
   // Updated each render so the drag handler always has the latest pathGenerator/graticule
   const applyRotationRef = useRef(null);
@@ -176,6 +177,11 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     // Capture the start rotation once so every frame interpolates from the
     // same origin — not from whatever `prev` happens to be mid-animation.
     const startRotation = rotationRef.current;
+    // Normalise deltas to [-180, 180] so the animation always takes the
+    // shortest arc (avoids the 330° detour when crossing the ±180° meridian).
+    const wrap = (d) => ((d % 360) + 540) % 360 - 180;
+    const dLng = wrap(target[0] - startRotation[0]);
+    const dLat = wrap(target[1] - startRotation[1]);
     let rafId;
     const cancel = () => {
       cancelAnimationFrame(rafId);
@@ -186,8 +192,8 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       const t = Math.min((now - startTime) / duration, 1);
       const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       const next = [
-        startRotation[0] + (target[0] - startRotation[0]) * ease,
-        startRotation[1] + (target[1] - startRotation[1]) * ease,
+        startRotation[0] + dLng * ease,
+        startRotation[1] + dLat * ease,
       ];
       setRotation(next);
       if (t < 1) {
@@ -222,17 +228,15 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   }, []);
 
   const clearHover = useCallback(() => {
-    if (hoveredElRef.current) {
-      const el = hoveredElRef.current;
+    for (const el of hoveredElsRef.current) {
       el.setAttribute("stroke", "#555");
       el.setAttribute("stroke-width", "1");
-      // Restore original draw order using the sibling recorded at hover-start
       if (el._nextSibling !== undefined) {
         if (el.parentNode) el.parentNode.insertBefore(el, el._nextSibling);
         delete el._nextSibling;
       }
-      hoveredElRef.current = null;
     }
+    hoveredElsRef.current = [];
   }, []);
 
   // Drag — mousemove/mouseup are attached to window so dragging continues
@@ -248,16 +252,19 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     }
     dragStart.current = { x: e.clientX, y: e.clientY, rotation: rotationRef.current };
     isRotating.current = true;
-    clearHover();
+    // clearHover is deferred to first actual movement so the DOM element isn't
+    // moved between mousedown and click (which would lose the click target).
 
     // Keep a small ring buffer of recent pointer positions to derive release velocity
     const SAMPLE_MS = 80;
     const samples = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
+    let hoverCleared = false;
 
     const onMove = (e) => {
+      if (!hoverCleared) { clearHover(); hoverCleared = true; }
       const dx = e.clientX - dragStart.current.x;
       const dy = e.clientY - dragStart.current.y;
-      if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
+      if (Math.hypot(dx, dy) > 6) wasDrag.current = true;
       const [l0, p0] = dragStart.current.rotation;
       applyDragRotation([l0 + dx * DRAG_SENSITIVITY, p0 - dy * DRAG_SENSITIVITY]);
 
@@ -350,24 +357,29 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     }
     if (!dragStart.current) return;
     dragStart.current = null;
-    setTimeout(() => { wasDrag.current = false; }, 0);
 
     // Swipe momentum — same logic as mouse coast
     const samples = touchSamplesRef.current;
     const newest = samples[samples.length - 1];
     const oldest = samples[0];
-    if (!newest || !oldest) { isRotating.current = false; setRotation([...rotationRef.current]); return; }
-    const dt = newest.t - oldest.t || 1;
-    const vx = (newest.x - oldest.x) / dt;
-    const vy = (newest.y - oldest.y) / dt;
     const DAMPING = 0.85;
     const SCALE = DRAG_SENSITIVITY * 16;
     const COAST_THRESHOLD_PX = 10;
-    if (Math.hypot(newest.x - oldest.x, newest.y - oldest.y) < COAST_THRESHOLD_PX) {
+    const isTap = !newest || !oldest ||
+      Math.hypot(newest.x - oldest.x, newest.y - oldest.y) < COAST_THRESHOLD_PX;
+    if (isTap) {
+      // Reset wasDrag immediately so the synthesized click fires correctly.
+      // (setTimeout(0) can lose the race against the click event on some browsers.)
+      wasDrag.current = false;
       isRotating.current = false;
       setRotation([...rotationRef.current]);
       return;
     }
+    // Was a real swipe — reset wasDrag after click has had a chance to fire
+    setTimeout(() => { wasDrag.current = false; }, 0);
+    const dt = newest.t - oldest.t || 1;
+    const vx = (newest.x - oldest.x) / dt;
+    const vy = (newest.y - oldest.y) / dt;
     let dvx = vx * SCALE, dvy = vy * SCALE;
     let rafId;
     const cancelCoast = () => {
@@ -422,7 +434,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       const t = e.touches[0];
       const dx = t.clientX - dragStart.current.x;
       const dy = t.clientY - dragStart.current.y;
-      if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
+      if (Math.hypot(dx, dy) > 8) wasDrag.current = true; // higher threshold than mouse — fingers are less precise
       const [l0, p0] = dragStart.current.rotation;
       applyDragRotation([l0 + dx * DRAG_SENSITIVITY, p0 - dy * DRAG_SENSITIVITY]);
       // Track velocity samples for swipe momentum
@@ -520,18 +532,28 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
 
   const doOpenPopup = useCallback(
     (feature) => {
-      // For exploded MultiPolygon sub-features, compute centroid from the
-      // original (full) feature so the popup anchor is the country's true
-      // centre, not the centroid of a single island or province (m-10).
       const anchorFeature = feature._originalFeature || feature;
-      const [lng, lat] = geoCentroid(anchorFeature);
+      let lng, lat;
+      if (anchorFeature.geometry.type === "MultiPolygon") {
+        // Use the centroid of the largest sub-polygon so the anchor lands on the
+        // main landmass (e.g. metropolitan France) rather than a weighted average
+        // that may fall in the ocean when overseas territories are included.
+        const best = anchorFeature.geometry.coordinates
+          .map((coords) => ({ type: "Feature", geometry: { type: "Polygon", coordinates: coords }, properties: {} }))
+          .reduce((a, b) => (geoArea(a) >= geoArea(b) ? a : b));
+        [lng, lat] = geoCentroid(best);
+      } else {
+        [lng, lat] = geoCentroid(anchorFeature);
+      }
       hasTilted.current = false;
+      popupReadyRef.current = false; // hidden until tilt animation (or no-tilt) completes
       setPopupHeight(0);
+      popupSizeRef.current = { width: 0, height: 0 }; // prevent stale height from previous popup
       setPopupClosing(false);
-      // Clear any highlighted row in the country table. Must be called before
-      // setPopup so that the selected→useEffect at L445 fires with null and
-      // doesn't re-trigger an animation after the popup is already open (C-1).
-      setCountry();
+      // Sync selected country with open popup so switching map↔globe transfers
+      // the open popup to the other view. The selected useEffect guards against
+      // re-animating when the popup is already open for this country (C-1).
+      setCountry(feature.properties.NAME);
       setPopup({ properties: feature.properties, lng, lat });
     },
     [setCountry]
@@ -554,11 +576,12 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   const closePopup = useCallback(() => {
     clearTimeout(closeTimerRef.current);
     setPopupClosing(true);
+    setCountry();
     closeTimerRef.current = setTimeout(() => {
       setPopup(null);
       setPopupClosing(false);
     }, 150);
-  }, []);
+  }, [setCountry]);
 
   // Shadow popup in a ref so the category-change effect below can read whether
   // a popup is open without listing popup as a dep (which would re-run the
@@ -576,15 +599,25 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     if (isRotating.current) return;
     clearHover();
     const entry = pathRefsRef.current[idx];
-    if (entry) {
-      const el = entry.el;
-      // Record next sibling so clearHover can restore the original draw order
+    if (!entry) return;
+    // Highlight all polygons belonging to the same country (MultiPolygon split).
+    // Group by _originalFeature reference — sub-polygons of the same MultiPolygon
+    // share the exact same object. Falls back to the feature itself for simple
+    // Polygons, so each is its own group (avoids false matches via shared CODE "-99").
+    const anchor = entry.feature._originalFeature || entry.feature;
+    const els = [];
+    for (const e of Object.values(pathRefsRef.current)) {
+      if (!e) continue;
+      const eAnchor = e.feature._originalFeature || e.feature;
+      if (eAnchor !== anchor) continue;
+      const el = e.el;
       el._nextSibling = el.nextSibling;
-      if (el.parentNode) el.parentNode.appendChild(el); // move to end → painted on top
+      if (el.parentNode) el.parentNode.appendChild(el);
       el.setAttribute("stroke", "#333");
       el.setAttribute("stroke-width", "1.5");
-      hoveredElRef.current = el;
+      els.push(el);
     }
+    hoveredElsRef.current = els;
   }, [clearHover]);
 
   const handleLeave = useCallback(() => {
@@ -616,13 +649,24 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     if (svgPos[1] < needed) {
       hasTilted.current = true;
       const targetPhi = phiForAnchorY(popup.lat, needed);
-      return animateToRotation([rotationRef.current[0], targetPhi], 300);
+      return animateToRotation([rotationRef.current[0], targetPhi], 300, () => {
+        // Mark ready — the re-render triggered by setRotation(target) at animation
+        // end will call applyRotationRef with the correct final rotation.
+        popupReadyRef.current = true;
+      });
     }
+    // No tilt needed — show immediately
+    popupReadyRef.current = true;
+    if (applyRotationRef.current) applyRotationRef.current(rotationRef.current);
   }, [popupHeight, popup, projection, phiForAnchorY, animateToRotation]);
 
-  // Table selection: animate to centroid then open popup
+  // Table selection: animate to centroid then open popup.
+  // Also fires when switching from map→globe with a popup already open (selected
+  // is set to the open country name), in which case we skip animation if the
+  // popup is already showing that country (popupStateRef guards without extra deps).
   useEffect(() => {
     if (!selected || !features.length) return;
+    if (popupStateRef.current?.properties?.NAME === selected) return;
     const matches = features.filter((f) => f.properties.NAME === selected);
     if (!matches.length) return;
     // Compute geoArea once per candidate to avoid double-calling in reduce (#4)
@@ -642,20 +686,6 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   }, [selected, features, animateToRotation, doOpenPopup]);
 
   // Re-project popup anchor to screen coords on every render.
-  // Returns null if the anchor is behind the horizon → hides the popup.
-  // Uses cached containerRect to avoid a forced layout reflow (#7).
-  const popupScreenPos = useMemo(() => {
-    if (!popup || !projection) return null;
-    const visibleCenter = [-rotation[0], -rotation[1]];
-    if (geoDistance([popup.lng, popup.lat], visibleCenter) > Math.PI / 2)
-      return null;
-    const svgPos = projection([popup.lng, popup.lat]);
-    if (!svgPos) return null;
-    const rect = containerRectRef.current;
-    if (!rect) return null;
-    return { x: rect.left + svgPos[0], y: rect.top + svgPos[1] };
-  }, [popup, projection, rotation]);
-
   // Keep popup anchor ref in sync so the drag loop can access it without stale closures
   popupAnchorRef.current = popup ? { lng: popup.lng, lat: popup.lat } : null;
 
@@ -748,7 +778,8 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       // Popup
       const anchor = popupAnchorRef.current;
       if (popupRef.current && anchor) {
-        if (geoDistance([anchor.lng, anchor.lat], visibleCenter) > Math.PI / 2) {
+        if (!popupReadyRef.current || geoDistance([anchor.lng, anchor.lat], visibleCenter) > Math.PI / 2) {
+          // Not ready yet (tilt pending / size unknown) or anchor is behind the globe.
           popupRef.current.style.visibility = "hidden";
         } else {
           const svgPos = projection([anchor.lng, anchor.lat]);
@@ -807,7 +838,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       <svg
         width={width}
         height={height}
-        style={{ touchAction: "none" }}
+        style={{ touchAction: "none", WebkitTapHighlightColor: "transparent" }}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -829,25 +860,27 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
           stroke="#ccc"
           strokeWidth={0.4}
         />
-        {features.map((feature, i) => {
-          if (oversizedSet.has(i)) return null;
-          const d = pathGenerator(feature);
-          return (
-            <CountryPath
-              ref={(el) => { pathRefsRef.current[i] = el ? { el, feature } : null; }}
-              key={feature._key}
-              d={d || ""}
-              fill={colorMap[feature.properties.CODE] || "#fff"}
-              strokeColor="#555"
-              strokeWidth={1}
-              idx={i}
-              onEnter={handleEnter}
-              onLeave={handleLeave}
-              onClick={handleClick}
-              style={d ? undefined : { display: "none" }}
-            />
-          );
-        })}
+        <g>
+          {features.map((feature, i) => {
+            if (oversizedSet.has(i)) return null;
+            const d = pathGenerator(feature);
+            return (
+              <CountryPath
+                ref={(el) => { pathRefsRef.current[i] = el ? { el, feature } : null; }}
+                key={feature._key}
+                d={d || ""}
+                fill={colorMap[feature.properties.CODE] || "#fff"}
+                strokeColor="#555"
+                strokeWidth={1}
+                idx={i}
+                onEnter={handleEnter}
+                onLeave={handleLeave}
+                onClick={handleClick}
+                style={d ? undefined : { display: "none" }}
+              />
+            );
+          })}
+        </g>
         {/* Focus info icons — always rendered so iconRefsRef is always
             populated and the drag loop can imperatively show/hide them.
             Visibility is controlled via display style, never via return null. */}
@@ -875,11 +908,9 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         })}
       </svg>
 
-      {popup && popupScreenPos && (
+      {popup && projection && (
         <GlobePopup
           ref={popupRef}
-          x={popupScreenPos.x}
-          y={popupScreenPos.y}
           closing={popupClosing}
           category={category}
           country={popup.properties}

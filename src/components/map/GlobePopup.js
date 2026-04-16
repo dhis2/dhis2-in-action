@@ -1,9 +1,7 @@
-import React, { useRef, useState, useEffect, forwardRef } from "react";
+import React, { useRef, useEffect, forwardRef } from "react";
 import PopupContent from "./PopupContent";
 
 const GlobePopup = forwardRef(function GlobePopup({
-  x,
-  y,
   closing,
   category,
   country,
@@ -15,7 +13,6 @@ const GlobePopup = forwardRef(function GlobePopup({
 }, outerRef) {
   const contentRef = useRef(null);
   const onSizeChangeRef = useRef(onSizeChange);
-  const [size, setSize] = useState({ width: 0, height: 0 });
 
   // Keep ref in sync so the ResizeObserver always calls the latest callback
   // without needing to re-register the observer on every render.
@@ -29,7 +26,6 @@ const GlobePopup = forwardRef(function GlobePopup({
     // Use entry.contentRect to avoid triggering a layout reflow (M-6)
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
-      setSize({ width, height });
       if (onSizeChangeRef.current) onSizeChangeRef.current(width, height);
     });
     ro.observe(el);
@@ -42,16 +38,15 @@ const GlobePopup = forwardRef(function GlobePopup({
       className={`leaflet-container ${closing ? "globe-popup-exit" : "globe-popup-enter"}`}
       style={{
         position: "fixed",
-        left: x - size.width / 2 - 22,
-        top: y - size.height - 36,
         width: 300,
         zIndex: 0,
         overflow: "visible",
         background: "none",
-        visibility: size.height === 0 ? "hidden" : "visible",
+        // left, top, visibility are set imperatively by applyRotationRef in
+        // GlobeView — keeping them out of React style prevents jump on re-render.
       }}
     >
-      <div className="leaflet-popup leaflet-zoom-animated">
+      <div className="leaflet-popup">
         <div className="leaflet-popup-content-wrapper">
           <div className="leaflet-popup-content">
             <div ref={contentRef} style={{ display: "inline-block" }}>

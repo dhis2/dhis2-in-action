@@ -37,7 +37,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
       setFeature();
       setLatlng(latlng);
       setFeature(layer.feature.properties);
-      setCountry(); // Clear previously clicked country in list
+      setCountry(layer.feature.properties.NAME); // sync so map↔globe popup transfer works
     },
     [setCountry]
   );
@@ -116,6 +116,9 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
 
   useEffect(() => {
     if (selected && layer) {
+      // Skip if this country's popup is already open (e.g. user clicked it
+      // directly — avoids redundant re-open when setCountry syncs the name).
+      if (feature?.NAME === selected) return;
       const selectedLayer = layer
         .getLayers()
         .find((l) => l.feature.properties.NAME === selected);
@@ -125,7 +128,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
         setFeature(selectedLayer.feature.properties);
       }
     }
-  }, [layer, selected]);
+  }, [layer, selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -138,7 +141,7 @@ const Countries = ({ category, selected, setCountry, setCategory }) => {
           legend={legend}
           setCountry={setCountry}
           setCategory={setCategory}
-          onClose={() => setFeature()}
+          onClose={() => { setFeature(); setCountry(); }}
         />
       ) : null}
     </>
