@@ -650,9 +650,8 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       hasTilted.current = true;
       const targetPhi = phiForAnchorY(popup.lat, needed);
       return animateToRotation([rotationRef.current[0], targetPhi], 300, () => {
-        // Mark ready — the re-render triggered by setRotation(target) at animation
-        // end will call applyRotationRef with the correct final rotation.
         popupReadyRef.current = true;
+        if (applyRotationRef.current) applyRotationRef.current(rotationRef.current);
       });
     }
     // No tilt needed — show immediately
