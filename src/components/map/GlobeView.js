@@ -70,6 +70,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
 
   const dragStart = useRef(null);
   const wasDrag = useRef(false);
+  const cancelAnimRef = useRef(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const legend = useMemo(
@@ -98,8 +99,11 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     return () => ro.disconnect();
   }, []);
 
-  // Cancel any pending popup-close timer on unmount
-  useEffect(() => () => clearTimeout(closeTimerRef.current), []);
+  // Cancel any pending popup-close timer or animation on unmount
+  useEffect(() => () => {
+    clearTimeout(closeTimerRef.current);
+    if (cancelAnimRef.current) cancelAnimRef.current();
+  }, []);
 
   rotationRef.current = rotation;
 
@@ -132,11 +136,18 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   // Animate rotation from current value to target over `duration` ms,
   // then call `onDone` if provided.
   const animateToRotation = useCallback((target, duration = 400, onDone) => {
+    // Cancel any in-flight animation before starting a new one
+    if (cancelAnimRef.current) cancelAnimRef.current();
     const startTime = performance.now();
     // Capture the start rotation once so every frame interpolates from the
     // same origin — not from whatever `prev` happens to be mid-animation.
     const startRotation = rotationRef.current;
     let rafId;
+    const cancel = () => {
+      cancelAnimationFrame(rafId);
+      cancelAnimRef.current = null;
+    };
+    cancelAnimRef.current = cancel;
     const step = (now) => {
       const t = Math.min((now - startTime) / duration, 1);
       const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
@@ -149,11 +160,12 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
         rafId = requestAnimationFrame(step);
       } else {
         setRotation(target);
+        cancelAnimRef.current = null;
         if (onDone) onDone();
       }
     };
     rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
+    return cancel;
   }, []);
 
   // Given the centroid (lng, lat) and the current rotation, compute the φ
@@ -188,16 +200,41 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     dragStart.current = null;
   }, []);
 
-  // Scroll zoom
+  // Touch drag — mirrors mouse drag for single-finger rotation
+  const onTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    dragStart.current = { x: t.clientX, y: t.clientY, rotation: rotationRef.current };
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    dragStart.current = null;
+  }, []);
+
+  // Scroll zoom + touch move (both need passive:false to call preventDefault)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const handler = (e) => {
+    const wheelHandler = (e) => {
       e.preventDefault();
       setScale((s) => Math.max(0.4, Math.min(8, s - e.deltaY * 0.001)));
     };
-    el.addEventListener("wheel", handler, { passive: false });
-    return () => el.removeEventListener("wheel", handler);
+    const touchMoveHandler = (e) => {
+      if (!dragStart.current || e.touches.length !== 1) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      const dx = t.clientX - dragStart.current.x;
+      const dy = t.clientY - dragStart.current.y;
+      if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
+      const [l0, p0] = dragStart.current.rotation;
+      setRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
+    };
+    el.addEventListener("wheel", wheelHandler, { passive: false });
+    el.addEventListener("touchmove", touchMoveHandler, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", wheelHandler);
+      el.removeEventListener("touchmove", touchMoveHandler);
+    };
   }, []);
 
   // Flatten MultiPolygon features
@@ -320,7 +357,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     if (svgPos[1] < needed) {
       hasTilted.current = true;
       const targetPhi = phiForAnchorY(popup.lat, needed);
-      animateToRotation([rotationRef.current[0], targetPhi], 300);
+      return animateToRotation([rotationRef.current[0], targetPhi], 300);
     }
   }, [popupHeight, popup, projection, phiForAnchorY, animateToRotation]);
 
@@ -387,10 +424,13 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       <svg
         width={width}
         height={height}
+        style={{ touchAction: "none" }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         <circle
           cx={width / 2}
@@ -454,7 +494,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
           return (
             <image
               key={`icon-${properties.CODE}`}
-              href="/dhis2-in-action/icon-info-48.png"
+              href="icon-info-48.png"
               x={svgPos[0] - 10}
               y={svgPos[1] - 10}
               width={20}
