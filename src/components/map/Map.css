@@ -17,11 +17,11 @@
 }
 
 .globe-popup-enter {
-  animation: globePopupFadeIn 0.2s linear forwards;
+  animation: globePopupFadeIn 0.15s linear forwards;
 }
 
 .globe-popup-exit {
-  animation: globePopupFadeOut 0.2s linear forwards;
+  animation: globePopupFadeOut 0.15s linear forwards;
 }
 
 .globe-country {

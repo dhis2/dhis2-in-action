@@ -72,6 +72,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   const [scale, setScale] = useState(1);
 
   const dragStart = useRef(null);
+  const isRotating = useRef(false); // true during both drag and coast
   const wasDrag = useRef(false);
   const cancelAnimRef = useRef(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -201,10 +202,16 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   }, []);
 
   // Drag — mousemove/mouseup are attached to window so dragging continues
-  // even when the cursor leaves the viewport.
+  // even when the cursor leaves the viewport. Releases with momentum.
   const onMouseDown = useCallback((e) => {
     e.preventDefault();
+    if (cancelAnimRef.current) cancelAnimRef.current();
     dragStart.current = { x: e.clientX, y: e.clientY, rotation: rotationRef.current };
+    isRotating.current = true;
+
+    // Keep a small ring buffer of recent pointer positions to derive release velocity
+    const SAMPLE_MS = 80;
+    const samples = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
 
     const onMove = (e) => {
       const dx = e.clientX - dragStart.current.x;
@@ -212,13 +219,53 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       if (Math.hypot(dx, dy) > 3) wasDrag.current = true;
       const [l0, p0] = dragStart.current.rotation;
       applyDragRotation([l0 + dx * 0.4, p0 - dy * 0.4]);
+
+      const now = performance.now();
+      samples.push({ x: e.clientX, y: e.clientY, t: now });
+      // Discard samples older than SAMPLE_MS
+      while (samples.length > 1 && now - samples[0].t > SAMPLE_MS) samples.shift();
     };
 
     const onUp = () => {
       dragStart.current = null;
-      setRotation([...rotationRef.current]);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      // Reset wasDrag after a short delay so the click event that follows
+      // mouseup on a country can still read it, but it doesn't linger longer.
+      setTimeout(() => { wasDrag.current = false; }, 0);
+
+      // Compute velocity from oldest surviving sample to newest
+      const newest = samples[samples.length - 1];
+      const oldest = samples[0];
+      const dt = newest.t - oldest.t || 1;
+      const vx = (newest.x - oldest.x) / dt;
+      const vy = (newest.y - oldest.y) / dt;
+
+      // Convert px/ms velocity to rotation/frame and coast to a stop
+      const DAMPING = 0.85;
+      const SCALE = 0.4 * 16; // match drag sensitivity × ~16ms/frame
+      const COAST_THRESHOLD_PX = 10;
+      if (Math.hypot(newest.x - oldest.x, newest.y - oldest.y) < COAST_THRESHOLD_PX) {
+        isRotating.current = false;
+        setRotation([...rotationRef.current]);
+        return;
+      }
+      let dvx = vx * SCALE, dvy = vy * SCALE;
+      let rafId;
+      const coast = () => {
+        dvx *= DAMPING; dvy *= DAMPING;
+        if (Math.hypot(dvx, dvy) < 0.01) {
+          isRotating.current = false;
+          setRotation([...rotationRef.current]);
+          cancelAnimRef.current = null;
+          return;
+        }
+        const [l, p] = rotationRef.current;
+        applyDragRotation([l + dvx, p - dvy]);
+        rafId = requestAnimationFrame(coast);
+      };
+      cancelAnimRef.current = () => { cancelAnimationFrame(rafId); cancelAnimRef.current = null; isRotating.current = false; };
+      rafId = requestAnimationFrame(coast);
     };
 
     window.addEventListener("mousemove", onMove);
@@ -341,7 +388,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
       if (popup) {
         clearTimeout(closeTimerRef.current);
         setPopupClosing(true);
-        closeTimerRef.current = setTimeout(() => doOpenPopup(feature), 200);
+        closeTimerRef.current = setTimeout(() => doOpenPopup(feature), 100);
       } else {
         doOpenPopup(feature);
       }
@@ -355,7 +402,7 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     closeTimerRef.current = setTimeout(() => {
       setPopup(null);
       setPopupClosing(false);
-    }, 200);
+    }, 150);
   }, []);
 
   // Keep a ref to openPopup so handleClick never needs to change identity
@@ -364,8 +411,8 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
   openPopupRef.current = openPopup;
 
   // Stable handlers passed to CountryPath so memo can skip re-renders (#6)
-  const handleEnter = useCallback((idx) => { if (!dragStart.current) setHoveredIdx(idx); }, []);
-  const handleLeave = useCallback(() => { if (!dragStart.current) setHoveredIdx(null); }, []);
+  const handleEnter = useCallback((idx) => { if (!isRotating.current) setHoveredIdx(idx); }, []);
+  const handleLeave = useCallback(() => { if (!isRotating.current) setHoveredIdx(null); }, []);
   const handleClick = useCallback(
     (idx) => {
       if (wasDrag.current) { wasDrag.current = false; return; }
@@ -373,6 +420,12 @@ const GlobeView = ({ category, selected, setCountry, setCategory }) => {
     },
     [features]
   );
+
+  // When the category changes while a popup is open, the popup height may change —
+  // reset hasTilted so the tilt check runs again with the new dimensions.
+  useEffect(() => {
+    if (popup) hasTilted.current = false;
+  }, [category]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Once the popup has measured its real height, tilt the globe if the popup
   // would be clipped at the top of the container.
