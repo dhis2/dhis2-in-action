@@ -6,6 +6,8 @@ import Sidebar from "./Sidebar";
 import MapProvider from "./map/MapProvider";
 import Graticule from "./map/Graticule";
 import Countries from "./map/Countries";
+import GlobeView from "./map/GlobeView";
+import GlobeToggle from "./GlobeToggle";
 import ChartList from "./ChartList";
 import { categories } from "../utils/data";
 import "./App.css";
@@ -27,6 +29,7 @@ const getInitialCategory = () => {
 const App = () => {
   const [category, setCategory] = useState(getInitialCategory());
   const [country, setCountry] = useState();
+  const [isGlobe, setIsGlobe] = useState(false);
 
   useEffect(() => {
     window.location.hash = `#${category}`;
@@ -37,18 +40,28 @@ const App = () => {
       <DataProvider>
         <Loader />
         <Sidebar category={category} onSelect={setCategory}>
-          <MapProvider>
-            <Graticule />
-            <Countries
+          {isGlobe ? (
+            <GlobeView
               category={category}
               selected={country}
               setCountry={setCountry}
               setCategory={setCategory}
             />
-          </MapProvider>
+          ) : (
+            <MapProvider>
+              <Graticule />
+              <Countries
+                category={category}
+                selected={country}
+                setCountry={setCountry}
+                setCategory={setCategory}
+              />
+            </MapProvider>
+          )}
           <ChartList category={category} onClick={setCountry} />
         </Sidebar>
       </DataProvider>
+      <GlobeToggle isGlobe={isGlobe} onToggle={() => setIsGlobe((g) => !g)} />
     </Fullscreen>
   );
 };

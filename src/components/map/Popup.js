@@ -1,14 +1,8 @@
-import React, { useContext, useCallback, useEffect } from "react";
+import React, { useContext, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { popup } from "leaflet";
-import PopupExplore from "./PopupExplore";
-import PopupFocus from "./PopupFocus";
+import PopupContent from "./PopupContent";
 import { MapContext } from "./MapProvider";
-import { DataContext, FocusContext } from "../DataProvider";
-import { legacyCategories } from "../../utils/data";
-import MatchingStatesLinks, { getMatchingStates } from "./MatchingStatesLinks";
-
-const container = document.createElement("div");
 
 const Popup = ({
   latlng,
@@ -20,29 +14,10 @@ const Popup = ({
   onClose,
 }) => {
   const map = useContext(MapContext);
-  const dataContext = useContext(DataContext);
-  const data =
-    dataContext?.[legacyCategories.includes(category) ? "legacy" : "current"];
-  const focus = useContext(FocusContext);
-
-  const { CODE, NAME } = country;
-
-  const countryData = data?.countriesAndStates[CODE];
-  const focusItem = legend.find((l) => focus?.[CODE]?.[l.code]);
-  const countryFocus = focus[CODE]?.[focusItem?.code];
-
-  const isExploreMode = (legend) => legend[0].code === "_";
-
-  const legendItems =
-    countryData &&
-    legend
-      .map((i) => ({
-        ...i,
-        year: data.years.find(
-          (y) => countryData[y] && countryData[y].includes(i.code)
-        ),
-      }))
-      .filter((i) => i.year);
+  // Create the portal container lazily in a ref so each Popup instance owns
+  // its own DOM node — safe under concurrent React (M-8).
+  const containerRef = useRef(null);
+  if (!containerRef.current) containerRef.current = document.createElement("div");
 
   const onPopupOpen = useCallback(
     () => document.body.classList.add("popupopen"),
@@ -60,12 +35,9 @@ const Popup = ({
     const maxWidth = clientWidth < 400 ? clientWidth - 100 : 300;
     const maxHeight = clientHeight - 100;
 
-    popup({
-      maxWidth,
-      maxHeight,
-    })
+    popup({ maxWidth, maxHeight })
       .setLatLng(latlng)
-      .setContent(container)
+      .setContent(containerRef.current)
       .openOn(map);
   }, [map, latlng, category]);
 
@@ -74,7 +46,6 @@ const Popup = ({
       map.on("popupopen", onPopupOpen);
       map.on("popupclose", onPopupClose);
     }
-
     return () => {
       if (map) {
         map.off("popupopen", onPopupOpen);
@@ -84,49 +55,14 @@ const Popup = ({
   }, [map, onPopupOpen, onPopupClose]);
 
   return createPortal(
-    <>
-      <h2>{NAME}</h2>
-      {legendItems?.map(({ code, name, year }) => {
-        const matchingStates = getMatchingStates({
-          data,
-          countryCode: CODE,
-          categoryCode: code,
-          lastYear: data.lastYear,
-        });
-
-        return (
-          <div key={code}>
-            {name === "National" ? (
-              matchingStates.length ? "National scale" : "National scale since "
-            ) : name === "Subnational" ? (
-              matchingStates.length ? "Using DHIS2" : "Using DHIS2 since "
-            ) : matchingStates.length ? (
-              <>{name}</>
-            ) : (
-              <>{name}: Since </>
-            )}
-
-            {matchingStates.length ? (
-              <MatchingStatesLinks states={matchingStates} onStateClick={setCountry} />
-            ) : (
-              year
-            )}
-          </div>
-        );
-      })}
-      {isExploreMode(legend) && countryData ? (
-        <PopupExplore
-          country={country}
-          letters={countryData[data.lastYear]}
-          data={data}
-          lastYear={data.lastYear}
-          setCountry={setCountry}
-          setCategory={setCategory}
-        />
-      ) : null}
-      {countryFocus ? <PopupFocus data={countryFocus} /> : null}
-    </>,
-    container
+    <PopupContent
+      category={category}
+      country={country}
+      legend={legend}
+      setCountry={setCountry}
+      setCategory={setCategory}
+    />,
+    containerRef.current
   );
 };
 
