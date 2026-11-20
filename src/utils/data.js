@@ -23,6 +23,13 @@ export const categories = [
     hasChart: true,
   },
   {
+    id: "eregistry",
+    group: "country-owned",
+    title: "> eRegistry/EMR",
+    legend: [{ code: "r", name: "Patient-level systems", color: "#1fc8b8" }],
+    hasChart: false,
+  },
+  {
     id: "disease",
     group: "country-owned",
     title: "> Disease Surveillance",

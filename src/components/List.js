@@ -79,8 +79,7 @@ const List = ({ category, data, show, focus, onClick }) => {
                 key={name}
                 className="section"
                 style={{
-                  flexGrow: numCols,
-                  flexShrink: numCols,
+                  flex: `${numCols} 1 0`,
                 }}
               >
                 <h2>
